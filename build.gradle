@@ -11,9 +11,13 @@ repositories {
 
 dependencies {
     implementation 'org.ow2.asm:asm-commons:9.2'
+    implementation 'me.tongfei:progressbar:0.9.3'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    implementation files('pocolifoclient-reobfuscated.jar')
+    implementation files('output.jar')
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 
     compileOnly 'org.projectlombok:lombok:1.18.22'
     annotationProcessor 'org.projectlombok:lombok:1.18.22'
@@ -21,4 +25,18 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+task fatJar(type: org.gradle.jvm.tasks.Jar) {
+    manifest {
+        attributes(
+                'Main-Class': 'com.pocolifo.obfuscator.main.Bootstrapper'
+        )
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+    with jar
 }

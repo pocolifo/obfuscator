@@ -1,9 +1,8 @@
-package com.pocolifo.obfuscator.mapping;
+package com.pocolifo.obfuscator.passes.remapping;
 
 import org.objectweb.asm.tree.MethodNode;
 
 public class MethodMapping extends Mapping {
-    public String fromDesc;
-    public String toDesc;
+    public String desc;
     public MethodNode node;
 }

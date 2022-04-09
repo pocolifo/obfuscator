@@ -1,63 +1,54 @@
 package com.pocolifo.obfuscator;
 
-import lombok.Builder;
+import com.pocolifo.obfuscator.logger.Logging;
 import lombok.Data;
+import lombok.Getter;
 
 import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-import java.lang.AutoCloseable;
 
+@Getter
+public class ObfuscatorOptions {
+    private List<File> libraryJars = new ArrayList<>();
+    private File inJar;
+    private File outJar;
 
-public class ObfuscatorOptions implements AutoCloseable {
-    private List<InputStream> libraryJars = new ArrayList<>();
-    private InputStream inJar;
-    private OutputStream outJar;
+    @Getter private boolean dumpHierarchy = false;
+    @Getter private RemapOptions remapOptions = new RemapOptions();
 
     public ObfuscatorOptions setInJar(File file) throws IOException {
-        this.inJar = new FileInputStream(file);
+        inJar = file;
         return this;
     }
 
-    public ObfuscatorOptions setInJar(InputStream stream) {
-        this.inJar = stream;
+    public ObfuscatorOptions addLibraryJar(File file) {
+        libraryJars.add(file);
         return this;
     }
 
-    public ObfuscatorOptions addLibraryJar(File file) throws IOException {
-        this.libraryJars.add(new FileInputStream(file));
+    public ObfuscatorOptions setOutJar(File stream) {
+        outJar = stream;
         return this;
     }
 
-    public ObfuscatorOptions addLibraryJar(InputStream stream) {
-        this.libraryJars.add(stream);
-    }
-
-    public ObfuscatorOptions setOutJar(File file) throws IOException {
-        this.outJar = new FileOutputStream(file);
-        return this;
-    }
-
-    public ObfuscatorOptions setOutJar(OutputStream stream) {
-        this.outJar = stream;
+    public ObfuscatorOptions dumpHierarchy() {
+        dumpHierarchy = !dumpHierarchy;
         return this;
     }
 
     public void prepare() throws RuntimeException {
-        if (this.inJar == null) throw new RuntimeException("input jar is not set");
+        if (inJar == null) Logging.fatal("Input JAR is not set");
 
-        this.outJar = new File(this.inJar.getPath() + "-out.jar");
+        outJar = new File("output.jar");
     }
 
-    @Override
-    public void close() throws IOException {
-        this.inJar.close();
-        this.outJar.close();
-
-        this.libraryJars.forEach(InputStream::close);
+    @Data
+    public static class RemapOptions {
+        private boolean remapClassNames = true;
+        private boolean remapFieldNames = true;
+        private boolean remapMethodNames = true;
     }
 }

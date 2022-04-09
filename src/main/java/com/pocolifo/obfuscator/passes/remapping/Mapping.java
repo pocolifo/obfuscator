@@ -1,4 +1,4 @@
-package com.pocolifo.obfuscator.mapping;
+package com.pocolifo.obfuscator.passes.remapping;
 
 public class Mapping {
     public String from;
