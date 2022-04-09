@@ -105,29 +105,44 @@ public class MappingLoader {
         if (cMapping.methods.containsKey(md.name)) return;
 
         MethodName methodName = new MethodName(new ClassName(cMapping.to), md.name, md.desc);
-
-        methodName.methodName = getUniqueObfuscatedString();
-
-        MethodMapping mMapping = new MethodMapping();
-
-        mMapping.from = md.name;
-        mMapping.to = methodName.toString();
-        mMapping.node = md;
-        mMapping.desc = md.desc;
-
         ClassHierarchyNode chn = hierarchy.find(cMapping.from);
+        MethodMapping mMapping = new MethodMapping();
 
         if (chn == null) {
             Logging.fatal(cMapping.from + " not found on hierarchy! Did you include all of your JARs (dependencies, libraries)?");
             return;
         }
 
-        for (ClassHierarchyNode child : chn.children) {
-            ClassMapping childCMapping = mapping.resolveClass(child.classNode.name);
-            childCMapping.methods.put(mMapping.from, mMapping);
+        // check if this method is overridden
+        for (ClassHierarchyNode parent : chn.parents) {
+            ClassMapping parentMapping = mapping.resolveClass(parent.classNode.name);
+            if (parentMapping == null) {
+                if (parent.classNode.methods.stream().anyMatch(node -> node.name.equals(md.name) && node.desc.equals(md.desc))) {
+                    return;
+                }
+            } else if (parentMapping.methods.containsKey(md.name)) return;
         }
 
+        methodName.methodName = getUniqueObfuscatedString();
+
+
+        mMapping.from = md.name;
+        mMapping.to = methodName.toString();
+        mMapping.node = md;
+        mMapping.desc = md.desc;
+
+        addMethodsToAllChildren(chn, mapping, mMapping);
+
         cMapping.addMethodMapping(mMapping);
+    }
+
+    private static void addMethodsToAllChildren(ClassHierarchyNode node, JarMapping mapping, MethodMapping mMapping) {
+        for (ClassHierarchyNode child : node.children) {
+            ClassMapping childCMapping = mapping.resolveClass(child.classNode.name);
+            childCMapping.methods.put(mMapping.from, mMapping);
+
+            if (!child.children.isEmpty()) addMethodsToAllChildren(child, mapping, mMapping);
+        }
     }
 
     private static void doField(FieldNode fd, ClassMapping cMapping) {

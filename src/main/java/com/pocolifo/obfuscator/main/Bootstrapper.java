@@ -14,11 +14,11 @@ public class Bootstrapper {
         // pocolifoclient-reobfuscated.jar
         try {
             ObfuscatorOptions options = new ObfuscatorOptions()
-                    .setInJar(new File("pocolifoclient-reobfuscated.jar"))
-                    .setOutJar(new File("out.jar"))
+                    .setInJar(new File("java-chess-1.0-SNAPSHOT.jar"))
+                    .setOutJar(new File("output.jar"))
                     .dumpHierarchy();
 
-            Arrays.stream(new File("libraries").listFiles()).forEach(options::addLibraryJar);
+//            Arrays.stream(new File("libraries").listFiles()).forEach(options::addLibraryJar);
 
             ObfuscatorEngine engine = new ObfuscatorEngine(options);
             engine.obfuscate();

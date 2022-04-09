@@ -1,7 +1,5 @@
 package com.pocolifo.obfuscator.classes;
 
-import com.pocolifo.obfuscator.logger.Logging;
-
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +23,7 @@ public class ClassHierarchy {
                 missingClasses.add(parent);
             } else {
                 chn.children.add(target);
+                target.parents.add(chn);
             }
         }
     }
