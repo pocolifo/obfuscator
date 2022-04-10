@@ -4,16 +4,14 @@ import com.pocolifo.obfuscator.classes.ClassHierarchy;
 import com.pocolifo.obfuscator.classes.ClassHierarchyNode;
 import com.pocolifo.obfuscator.classes.ObfuscationClassKeeper;
 import com.pocolifo.obfuscator.logger.Logging;
-import com.pocolifo.obfuscator.passes.remapping.JarMapping;
-import com.pocolifo.obfuscator.passes.remapping.JarMappingRemapper;
-import com.pocolifo.obfuscator.passes.remapping.MappingLoader;
+import com.pocolifo.obfuscator.passes.ClassPass;
+import com.pocolifo.obfuscator.passes.remapping.RemapNamesPass;
+import com.pocolifo.obfuscator.passes.sourcehints.RemoveSourceHintsPass;
 import com.pocolifo.obfuscator.util.ProgressUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import me.tongfei.progressbar.ProgressBar;
-import org.jline.utils.Log;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.*;
@@ -25,11 +23,18 @@ import java.util.zip.ZipOutputStream;
 
 @RequiredArgsConstructor
 public class ObfuscatorEngine {
+    private static final Iterable<ClassPass> CLASS_PASSES = Arrays.asList(
+            new RemapNamesPass(),
+            new RemoveSourceHintsPass()
+    );
+
     @Getter private final ObfuscatorOptions options;
-    private ObfuscationClassKeeper classKeeper;
-    private ClassHierarchy hierarchy;
+    @Getter private ObfuscationClassKeeper classKeeper;
+    @Getter private ClassHierarchy hierarchy;
 
     public void obfuscate() throws IOException {
+        Logging.welcome();
+
         // initialization
         Logging.info("Initializing");
         options.prepare();
@@ -44,13 +49,15 @@ public class ObfuscatorEngine {
 
         // obfuscate
         Logging.info("Beginning obfuscation");
-        List<ClassNode> nodes = doObfuscation();
+
+        Logging.info("Running class obfuscation");
+        Iterable<ClassNode> nodes = doClassObfuscation();
 
         Logging.info("Done obfuscating, writing out JAR");
         writeOutJar(nodes);
     }
 
-    private void writeOutJar(List<ClassNode> nodes) throws IOException {
+    private void writeOutJar(Iterable<ClassNode> nodes) throws IOException {
         int count;
 
         try (ZipFile file = new ZipFile(options.getInJar())) {
@@ -86,28 +93,11 @@ public class ObfuscatorEngine {
         }
     }
 
-    private List<ClassNode> doObfuscation() {
-        Logging.info("Remapping names");
-        List<ClassNode> outClasses = new ArrayList<>();
+    private Iterable<ClassNode> doClassObfuscation() {
+        Collection<ClassNode> outClasses = classKeeper.inputClasses;
 
-        try (ProgressBar bar = ProgressUtil.bar("Remapping names", classKeeper.inputClasses.size())) {
-            // mappings
-            bar.setExtraMessage("Generating mappings");
-            JarMapping mapping = MappingLoader.generateMapping(hierarchy, classKeeper, options.getRemapOptions());
-
-            // remap
-            bar.setExtraMessage("Remapping");
-            JarMappingRemapper mappingProvider = new JarMappingRemapper(mapping);
-
-            for (ClassNode cls : classKeeper.inputClasses) {
-                ClassNode remapped = new ClassNode();
-                ClassRemapper remapper = new ClassRemapper(remapped, mappingProvider);
-                cls.accept(remapper);
-
-                outClasses.add(remapped);
-
-                bar.step();
-            }
+        for (ClassPass classPass : CLASS_PASSES) {
+            outClasses = classPass.run(this, outClasses);
         }
 
         return outClasses;
@@ -140,7 +130,7 @@ public class ObfuscatorEngine {
         }
 
         // load it
-        List<ClassNode> classesToAdd = classKeeper.allClasses;
+        Queue<ClassNode> classesToAdd = classKeeper.allClasses;
 
         Map<String, ClassHierarchyNode> nodes = new HashMap<>();
 
@@ -167,7 +157,7 @@ public class ObfuscatorEngine {
         }
 
         if (!missingClasses.isEmpty()) {
-            Logging.warn("Missing classes! This can cause hierarchy construction problems!");
+            Logging.warn("Missing classes! This can cause hierarchy construction problems, but not always.");
 
             for (String missingClass : missingClasses) {
                 Logging.warn("* %s", missingClass);

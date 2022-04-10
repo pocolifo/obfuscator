@@ -1,8 +1,6 @@
 package com.pocolifo.obfuscator.passes.remapping;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class JarMapping {
@@ -13,9 +11,9 @@ public class JarMapping {
         classes.put(mapping.from, mapping);
     }
 
-    public ClassMapping resolveClass(String fromName) {
+    public ClassMapping resolveClass(String name, NameType nameType) {
         for (ClassMapping cls : classes.values()) {
-            if (cls.from.equals(fromName)) {
+            if (NameType.compare(nameType, cls, name)) {
                 return cls;
             }
         }

@@ -16,8 +16,9 @@ public class ObfuscatorOptions {
     private File inJar;
     private File outJar;
 
-    @Getter private boolean dumpHierarchy = false;
-    @Getter private RemapOptions remapOptions = new RemapOptions();
+    private boolean dumpHierarchy = false;
+    private RemapOptions remapOptions = new RemapOptions();
+    private boolean removeSourceHints = true;
 
     public ObfuscatorOptions setInJar(File file) throws IOException {
         inJar = file;
@@ -50,5 +51,6 @@ public class ObfuscatorOptions {
         private boolean remapClassNames = true;
         private boolean remapFieldNames = true;
         private boolean remapMethodNames = true;
+        private boolean remapMethodParameterNames = true;
     }
 }

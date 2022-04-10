@@ -39,4 +39,22 @@ public class Logging {
         if (enable) System.err.printf(ANSI_RED + "%s [FATAL] %s%s%n", getLogPrefix(), String.format(string, objects), ANSI_RESET);
         System.exit(-1);
     }
+
+    public static void welcome() {
+        if (!enable) return;
+
+        System.out.println();
+        System.out.println(" /$$           /$$$$$$  /$$        /$$$$$$                                           /$$                        \n" +
+                "|  $$         /$$__  $$| $$       /$$__  $$                                         | $$                        \n" +
+                " \\  $$       | $$  \\ $$| $$$$$$$ | $$  \\__//$$   /$$  /$$$$$$$  /$$$$$$$  /$$$$$$  /$$$$$$    /$$$$$$   /$$$$$$ \n" +
+                "  \\  $$      | $$  | $$| $$__  $$| $$$$   | $$  | $$ /$$_____/ /$$_____/ |____  $$|_  $$_/   /$$__  $$ /$$__  $$\n" +
+                "   /$$/      | $$  | $$| $$  \\ $$| $$_/   | $$  | $$|  $$$$$$ | $$        /$$$$$$$  | $$    | $$  \\ $$| $$  \\__/\n" +
+                "  /$$/       | $$  | $$| $$  | $$| $$     | $$  | $$ \\____  $$| $$       /$$__  $$  | $$ /$$| $$  | $$| $$      \n" +
+                " /$$/        |  $$$$$$/| $$$$$$$/| $$     |  $$$$$$/ /$$$$$$$/|  $$$$$$$|  $$$$$$$  |  $$$$/|  $$$$$$/| $$      \n" +
+                "|__/          \\______/ |_______/ |__/      \\______/ |_______/  \\_______/ \\_______/   \\___/   \\______/ |__/      \n" +
+                "                                                                                                                ");
+        System.out.println("Brought to you by Pocolifo @ https://pocolifo.com");
+        System.out.println("Inspired by Skidfuscator @ https://skidfuscator.dev");
+        System.out.println();
+    }
 }

@@ -1,5 +1,6 @@
 package com.pocolifo.obfuscator.passes.remapping;
 
+import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.util.ArrayList;
@@ -19,14 +20,14 @@ public class ClassMapping extends Mapping {
     }
 
     public void addMethodMapping(MethodMapping mapping) {
-        if (methods.containsKey(mapping.from)) throw new RuntimeException("mapping already for method: " + mapping.from);
-        methods.put(mapping.from, mapping);
+        if (methods.containsKey(mapping.from + mapping.desc)) throw new RuntimeException("mapping already for method: " + mapping.from);
+        methods.put(mapping.from + mapping.desc, mapping);
     }
 
     // todo add descriptor
-    public FieldMapping resolveField(String fromName) {
+    public FieldMapping resolveField(String name, NameType nameType) {
         for (FieldMapping fdm : fields.values()) {
-            if (fdm.from.equals(fromName)) {
+            if (NameType.compare(nameType, fdm, name)) {
                 return fdm;
             }
         }
@@ -34,9 +35,19 @@ public class ClassMapping extends Mapping {
         return null;
     }
 
-    public MethodMapping resolveMethod(String fromName, String descriptor) {
+    public MethodMapping resolveMethod(String name, String descriptor, NameType nameType) {
         for (MethodMapping mdm : methods.values()) {
-            if (mdm.from.equals(fromName) && mdm.desc.equals(descriptor)) {
+            if (NameType.compare(nameType, mdm, name) && mdm.desc.equals(descriptor)) {
+                return mdm;
+            }
+        }
+
+        return null;
+    }
+
+    public MethodMapping resolveMethod(String name, String descriptor, Remapper remapper, NameType nameType) {
+        for (MethodMapping mdm : methods.values()) {
+            if (NameType.compare(nameType, mdm, name) && (mdm.desc.equals(descriptor) || remapper.mapMethodDesc(mdm.desc).equals(descriptor))) {
                 return mdm;
             }
         }
