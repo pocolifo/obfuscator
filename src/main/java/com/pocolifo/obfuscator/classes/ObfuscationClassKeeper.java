@@ -5,12 +5,12 @@ import org.objectweb.asm.tree.ClassNode;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Queue;
+import java.net.URI;
+import java.nio.file.*;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 public class ObfuscationClassKeeper {
@@ -33,11 +33,35 @@ public class ObfuscationClassKeeper {
         }
     }
 
+    private void loadJmod(Path path, Collection<ClassNode> list, int parseOptions) throws IOException {
+        try (FileSystem fs = FileSystems.newFileSystem(path, ClassLoader.getSystemClassLoader())) {
+            Path root = fs.getRootDirectories().iterator().next();
+
+            Files.walk(root).filter(p -> p.getFileName() != null && p.getFileName().toString().endsWith(".class")).forEach(p -> {
+                try (InputStream stream = Files.newInputStream(p, StandardOpenOption.READ)) {
+                    ClassNode node = new ClassNode();
+
+                    ClassReader reader = new ClassReader(stream);
+                    reader.accept(node, parseOptions);
+
+                    list.add(node);
+                    allClasses.add(node);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+    }
+
     public void loadInputJar(InputStream inJar) throws IOException {
         loadJar(inJar, inputClasses, ClassReader.EXPAND_FRAMES);
     }
 
-    public void loadDependencyJar(InputStream dependencyJar) throws IOException {
-        loadJar(dependencyJar, dependencyClasses, ClassReader.SKIP_CODE);
+    public void loadDependencyJar(InputStream dependency) throws IOException {
+        loadJar(dependency, dependencyClasses, ClassReader.SKIP_CODE);
+    }
+
+    public void loadDependencyJmod(Path path) throws IOException {
+        loadJmod(path, dependencyClasses, ClassReader.SKIP_CODE);
     }
 }

@@ -54,7 +54,7 @@ public class MappingLoader {
         return builder.toString();
     }
 
-    public static JarMapping generateMapping(ClassHierarchy hierarchy, ObfuscationClassKeeper classKeeper, ObfuscatorOptions.RemapOptions options) {
+    public static JarMapping generateMapping(ClassHierarchy hierarchy, ObfuscationClassKeeper classKeeper, RemapNamesPass.Options options) {
         JarMapping mapping = new JarMapping();
 
         // create the mapping
@@ -109,7 +109,7 @@ public class MappingLoader {
         for (ClassMapping classMapping : mapping.classes.values()) {
             ClassHierarchyNode classHierarchyNode = hierarchy.find(classMapping.from);
 
-            if (options.isRemapClassNames()) {
+            if (options.remapClassNames) {
                 ClassName className = new ClassName(classMapping.from);
 
                 if (className.anonymousClass) {
@@ -123,12 +123,14 @@ public class MappingLoader {
                 }
 
                 classMapping.to = className.toString();
+            } else {
+                classMapping.to = classMapping.from;
             }
 
             for (FieldMapping fieldMapping : classMapping.fields.values()) {
                 if (fieldMapping.to != null) continue;
 
-                if (fieldNotDeclaredInParent(fieldMapping, classHierarchyNode) && options.isRemapFieldNames() && !EXCLUDED_FIELDS.contains(fieldMapping.from)) {
+                if (fieldNotDeclaredInParent(fieldMapping, classHierarchyNode) && options.remapFieldNames && !EXCLUDED_FIELDS.contains(fieldMapping.from)) {
                     fieldMapping.to = getUniqueObfuscatedString();
                     propagateFieldNamesToChildren(classHierarchyNode, fieldMapping, mapping);
                 } else {
@@ -140,7 +142,7 @@ public class MappingLoader {
                 if (methodMapping.to != null) continue;
                 boolean excludedFromObfuscation = EXCLUDED_METHODS.contains(methodMapping.from) || EXCLUDED_METHODS.contains(methodMapping.from + methodMapping.desc);
 
-                if (methodNotDeclaredInParent(methodMapping, classHierarchyNode) && options.isRemapMethodNames() && !excludedFromObfuscation) {
+                if (methodNotDeclaredInParent(methodMapping, classHierarchyNode) && options.remapMethodNames && !excludedFromObfuscation) {
                     methodMapping.to = getUniqueObfuscatedString();
                     propagateMethodNamesToChildren(classHierarchyNode, methodMapping, mapping);
                 } else {
@@ -148,7 +150,7 @@ public class MappingLoader {
                 }
 
                 for (ParameterMapping parameterMapping : methodMapping.parameterMappings) {
-                    parameterMapping.to = options.isRemapMethodParameterNames() ? getUniqueObfuscatedString() : parameterMapping.from;
+                    parameterMapping.to = options.remapMethodParameterNames ? getUniqueObfuscatedString() : parameterMapping.from;
                 }
             }
         }
@@ -161,70 +163,6 @@ public class MappingLoader {
             className.parentClass = new ClassName(parentClass.to);
             classMapping.to = className.toString();
         }
-
-
-//        for (ClassNode cls : classKeeper.inputClasses) {
-//            doClass(options, cls, mapping);
-//        }
-//
-//        for (ClassMapping cls : mapping.classes.values()) {
-//            if (options.isRemapFieldNames()) {
-//                for (FieldNode fd : cls.node.fields) {
-//                    doField(fd, cls);
-//                }
-//            }
-//
-//            if (options.isRemapMethodNames()) {
-//                for (MethodNode md : cls.node.methods) {
-//                    doMethod(cls, md, hierarchy, mapping);
-//                }
-//            }
-//
-//            if (options.isRemapMethodParameterNames()) {
-//                for (MethodNode md : cls.node.methods) {
-//                    MethodMapping mMapping = cls.methods.get(md.name + md.desc);
-//
-//                    if (mMapping == null || md.parameters == null) continue;
-//
-//                    for (ParameterNode parameter : md.parameters) {
-//                        ParameterMapping pMapping = new ParameterMapping();
-//
-//                        pMapping.methodNode = md;
-//                        pMapping.node = parameter;
-//                        pMapping.from = parameter.name;
-//                        pMapping.to = getUniqueObfuscatedString();
-//
-//                        mMapping.parameterMappings.add(pMapping);
-//                    }
-//                }
-//            }
-//        }
-//
-//        // update child field names
-//        for (ClassNode cls : classKeeper.inputClasses) {
-//            ClassHierarchyNode hNode = hierarchy.find(cls.name);
-//            ClassMapping cMapping = mapping.resolveClass(cls.name, NameType.FROM);
-//
-//            for (ClassHierarchyNode child : hNode.children) {
-//                ClassMapping childCMapping = mapping.resolveClass(child.classNode.name, NameType.FROM);
-//
-//                childCMapping.fields.putAll(cMapping.fields);
-//            }
-//        }
-//
-//        // update nested class names
-//        for (ClassNode cls : classKeeper.inputClasses) {
-//            ClassMapping cMapping = mapping.resolveClass(cls.name, NameType.FROM);
-//            ClassName className = new ClassName(cMapping.to);
-//
-//            if (className.parentClass != null && !className.anonymousClass) {
-//                ClassMapping parentMapping = mapping.resolveClass(className.parentClass.toString(), NameType.FROM);
-//                className.parentClass = new ClassName(parentMapping.to);
-//
-//                cMapping.to = className.toString();
-//            }
-//        }
-
 
         return mapping;
     }

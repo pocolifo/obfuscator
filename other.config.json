@@ -1,0 +1,28 @@
+{
+  "outJar": "output.jar",
+  "dumpHierarchy": false,
+  "libraryJars": [],
+  "passes": {
+    "RemapNamesPass": {
+      "enabled": false,
+      "remapClassNames": true,
+      "remapFieldNames": true,
+      "remapMethodNames": true,
+      "remapMethodParameterNames": true
+    },
+    "ShuffleMembersPass": {
+      "enabled": false,
+      "shuffleMethods": true,
+      "shuffleFields": true
+    },
+    "RemoveSourceHintsPass": {
+      "enabled": false,
+      "sourceFile": true,
+      "sourceDebug": true,
+      "lineNumbers": true
+    },
+    "StringManglerPass": {
+      "enabled": true
+    }
+  }
+}

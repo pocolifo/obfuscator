@@ -5,17 +5,25 @@ import com.pocolifo.obfuscator.classes.ClassHierarchyNode;
 import com.pocolifo.obfuscator.classes.ObfuscationClassKeeper;
 import com.pocolifo.obfuscator.logger.Logging;
 import com.pocolifo.obfuscator.passes.ClassPass;
+import com.pocolifo.obfuscator.passes.PassOptions;
 import com.pocolifo.obfuscator.passes.remapping.RemapNamesPass;
+import com.pocolifo.obfuscator.passes.shufflemembers.ShuffleMembersPass;
 import com.pocolifo.obfuscator.passes.sourcehints.RemoveSourceHintsPass;
+import com.pocolifo.obfuscator.passes.string.StringManglerPass;
 import com.pocolifo.obfuscator.util.ProgressUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import me.tongfei.progressbar.ProgressBar;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -23,25 +31,20 @@ import java.util.zip.ZipOutputStream;
 
 @RequiredArgsConstructor
 public class ObfuscatorEngine {
-    private static final Iterable<ClassPass> CLASS_PASSES = Arrays.asList(
-            new RemapNamesPass(),
-            new RemoveSourceHintsPass()
-    );
-
     @Getter private final ObfuscatorOptions options;
     @Getter private ObfuscationClassKeeper classKeeper;
     @Getter private ClassHierarchy hierarchy;
 
     public void obfuscate() throws IOException {
-        Logging.welcome();
-
-        // initialization
-        Logging.info("Initializing");
-        options.prepare();
-
         // jar loading
         Logging.info("Loading jars");
-        loadJars();
+
+        try {
+            loadJars();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Logging.fatal("Could not load JARs! Exception: %s", e);
+        }
 
         // hierarchy
         Logging.info("Creating class hierarchy");
@@ -49,23 +52,24 @@ public class ObfuscatorEngine {
 
         // obfuscate
         Logging.info("Beginning obfuscation");
-
-        Logging.info("Running class obfuscation");
         Iterable<ClassNode> nodes = doClassObfuscation();
 
         Logging.info("Done obfuscating, writing out JAR");
         writeOutJar(nodes);
+
+        // end
+        Logging.info("Finished obfuscation in %fs", (System.currentTimeMillis() - options.initTimestamp) / 1000f);
     }
 
     private void writeOutJar(Iterable<ClassNode> nodes) throws IOException {
         int count;
 
-        try (ZipFile file = new ZipFile(options.getInJar())) {
+        try (ZipFile file = new ZipFile(options.inJar)) {
             count = file.size();
         }
 
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(options.getInJar()));
-             ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(options.getOutJar()));
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(options.inJar));
+             ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(options.outJar));
              ProgressBar bar = ProgressUtil.bar("Writing out JAR", count)) {
             for (ZipEntry e; (e = zis.getNextEntry()) != null;) {
                 if (!e.getName().endsWith(".class")) {
@@ -94,9 +98,16 @@ public class ObfuscatorEngine {
     }
 
     private Iterable<ClassNode> doClassObfuscation() {
+        Logging.info("Loaded passes:");
+        for (ClassPass<? extends PassOptions> classPass : options.passes) {
+            Logging.info("%s * %s", classPass.getOptions().enabled ? Logging.ANSI_GREEN : Logging.ANSI_RED, classPass.getClass().getSimpleName());
+        }
+
         Collection<ClassNode> outClasses = classKeeper.inputClasses;
 
-        for (ClassPass classPass : CLASS_PASSES) {
+        for (ClassPass<? extends PassOptions> classPass : options.passes) {
+            if (!classPass.getOptions().enabled) continue;
+
             outClasses = classPass.run(this, outClasses);
         }
 
@@ -166,7 +177,7 @@ public class ObfuscatorEngine {
 
         Logging.info("Constructed hierarchy");
 
-        if (options.isDumpHierarchy()) {
+        if (options.dumpHierarchy) {
             Logging.info("Dumping hierarchy to file");
 
             try (PrintStream stream = new PrintStream("hierarchy.txt")) {
@@ -177,34 +188,104 @@ public class ObfuscatorEngine {
         }
     }
 
-    private void loadJars() throws IOException {
+    private int getJavaVersionOfInput() throws IOException {
+        AtomicInteger javaVersionOfCode = new AtomicInteger(-1);
+
+        try (ZipFile zf = new ZipFile(options.inJar)) {
+            zf.stream().filter(zipEntry -> zipEntry.getName().endsWith(".class")).findFirst().ifPresent(zipEntry -> {
+                try (InputStream stream = zf.getInputStream(zipEntry)) {
+                    ClassReader reader = new ClassReader(stream);
+                    ClassNode node = new ClassNode();
+
+                    reader.accept(node, ClassReader.SKIP_CODE);
+
+                    Map<Integer, Integer> opcodeToJavaVersion = new HashMap<>();
+
+                    for (Field field : Opcodes.class.getDeclaredFields()) {
+                        if (field.getName().startsWith("V")) {
+                            String javaVersion = field.getName().replace("V", "").replace("1_", "");
+
+                            try {
+                                field.setAccessible(true);
+                                opcodeToJavaVersion.put(field.getInt(null), Integer.parseInt(javaVersion));
+                            } catch (NumberFormatException | IllegalAccessException ignored) {}
+                        }
+                    }
+
+                    javaVersionOfCode.set(opcodeToJavaVersion.get(node.version));
+                } catch (IOException ignored) {}
+            });
+        }
+
+        return javaVersionOfCode.get();
+    }
+
+    private void loadJars() throws Exception {
         classKeeper = new ObfuscationClassKeeper();
+
+        Logging.info("Detecting input JAR Java version");
+        int javaVersionOfCode = getJavaVersionOfInput();
+
+        if (javaVersionOfCode == -1) {
+            Logging.warn("Could not detect language level");
+        } else {
+            int currentVersion = Integer.parseInt(System.getProperty("java.specification.version").replace("1.", ""));
+
+            if (currentVersion == javaVersionOfCode) {
+                Logging.info("Detected language level matches runtime Java version: %sJava %d", Logging.ANSI_CYAN, javaVersionOfCode);
+            } else {
+                Logging.warn("Detected language level (Java %d) and runtime Java version (Java %d) do not match. This can cause JRE libraries to be missed and hierarchy construction issues unless you specify the Java %d home.", javaVersionOfCode, currentVersion, javaVersionOfCode);
+            }
+        }
 
         Logging.info("Adding JRE and runtime jars");
 
         File[] jreJars = new File(System.getProperty("java.home"), "lib").listFiles((file, s) -> s.endsWith(".jar"));
+        File[] jreJmods = new File(System.getProperty("java.home"), "jmods").listFiles((file, s) -> s.endsWith(".jmod"));
 
-        for (File jreJar : jreJars) {
-            Logging.info("Found runtime JAR: " + jreJar.getAbsolutePath());
-            options.addLibraryJar(jreJar);
+        if (jreJars != null) {
+            for (File library : jreJars) {
+                Logging.info("Found runtime library: %s%s", Logging.ANSI_CYAN, library.getAbsolutePath());
+                options.libraryJars.add(library);
+            }
+        }
+
+        if (jreJmods != null) {
+            for (File library : jreJmods) {
+                Logging.info("Found runtime library: %s%s", Logging.ANSI_CYAN, library.getAbsolutePath());
+                options.libraryJars.add(library);
+            }
         }
 
         // count
-        int jarsToLoad = 1 + options.getLibraryJars().size();
+        int jarsToLoad = 1 + options.libraryJars.size();
         Logging.info("About to load %d jars", jarsToLoad);
 
-        try (ProgressBar bar = ProgressUtil.bar("Loading input JARs", jarsToLoad); FileInputStream fis = new FileInputStream(options.getInJar())) {
+        try (ProgressBar bar = ProgressUtil.bar("Loading input JARs", jarsToLoad); FileInputStream fis = new FileInputStream(options.inJar)) {
             classKeeper.loadInputJar(fis);
             bar.step();
 
+            AtomicReference<Exception> exception = new AtomicReference<>();
+
             // libraries
-            for (File file : options.getLibraryJars()) {
-                try (FileInputStream depStream = new FileInputStream(file)) {
-                    classKeeper.loadDependencyJar(depStream);
+            options.libraryJars.parallelStream().forEach(file -> {
+                try {
+                    if (file.getName().endsWith(".jmod")) {
+                        classKeeper.loadDependencyJmod(file.toPath());
+                    } else {
+                        try (FileInputStream depStream = new FileInputStream(file)) {
+                            classKeeper.loadDependencyJar(depStream);
+                        }
+                    }
+
                     bar.step();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    exception.set(e);
                 }
+            });
+
+            if (exception.get() != null) {
+                throw exception.get();
             }
         }
     }
