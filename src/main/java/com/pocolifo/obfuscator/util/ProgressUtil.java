@@ -1,6 +1,5 @@
 package com.pocolifo.obfuscator.util;
 
-import com.pocolifo.obfuscator.logger.Logging;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;

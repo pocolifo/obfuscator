@@ -1,4 +1,4 @@
-package com.pocolifo.obfuscator.logger;
+package com.pocolifo.obfuscator.util;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

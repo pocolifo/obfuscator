@@ -1,3 +1,0 @@
-java 17 uses .jmod archives which are just .jars
-/usr/lib/jvm/java-17-openjdk/jmods
-classes are held in /classes

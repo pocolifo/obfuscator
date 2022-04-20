@@ -3,6 +3,7 @@ package com.pocolifo.obfuscator.cli;
 import com.google.gson.*;
 import com.pocolifo.obfuscator.ObfuscatorOptions;
 import com.pocolifo.obfuscator.passes.ClassPass;
+import com.pocolifo.obfuscator.passes.Options;
 import com.pocolifo.obfuscator.passes.PassOptions;
 import com.pocolifo.obfuscator.util.DynamicOption;
 import com.pocolifo.obfuscator.util.FileUtil;
@@ -43,12 +44,21 @@ public class ConfigurationLoader {
         object.get("passes").getAsJsonObject().entrySet().forEach(entry -> {
             String name = entry.getKey();
             JsonObject cfg = entry.getValue().getAsJsonObject();
-            ClassPass<?> pass = null;
+            Options<?> pass = null;
 
             for (ClassPass<?> p : options.passes) {
                 if (p.getClass().getSimpleName().equals(name)) {
                     pass = p;
                     break;
+                }
+            }
+
+            if (pass == null) {
+                for (Options<?> p : options.archivePasses) {
+                    if (p.getClass().getSimpleName().equals(name)) {
+                        pass = p;
+                        break;
+                    }
                 }
             }
 
@@ -104,13 +114,17 @@ public class ConfigurationLoader {
         obj.addProperty("dumpHierarchy", def.dumpHierarchy);
 
         JsonObject passes = new JsonObject();
-        for (ClassPass<?> pass : def.passes) {
+        for (Options<?> pass : def.passes) {
+            passes.add(pass.getClass().getSimpleName(), getClassAsObject(pass.getOptions()));
+        }
+
+        for (Options<?> pass : def.archivePasses) {
             passes.add(pass.getClass().getSimpleName(), getClassAsObject(pass.getOptions()));
         }
         obj.add("passes", passes);
 
 
-        String json = new GsonBuilder().setPrettyPrinting().create().toJson(obj);
+        String json = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(obj);
         Files.write(to.toPath(), json.getBytes(StandardCharsets.UTF_8));
     }
 

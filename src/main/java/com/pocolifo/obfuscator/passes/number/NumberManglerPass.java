@@ -7,7 +7,7 @@ import me.tongfei.progressbar.ProgressBar;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
-import java.util.Collection;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class NumberManglerPass extends AbstractMethodPass<NumberManglerPassOptions> implements Opcodes {
@@ -22,9 +22,6 @@ public class NumberManglerPass extends AbstractMethodPass<NumberManglerPassOptio
     public void doMethod(ObfuscatorEngine engine, Collection<ClassNode> inClasses, ClassNode classNode, MethodNode methodNode, ProgressBar bar) {
         if (methodNode.instructions.getFirst() == null) return;
 
-        // ldcs
-        bar.setExtraMessage("Mangling LDCs");
-
         // key variable
         int keyVarIndex = getNextVarIndexes(1, methodNode)[0];
 
@@ -35,6 +32,20 @@ public class NumberManglerPass extends AbstractMethodPass<NumberManglerPassOptio
         for (AbstractInsnNode instruction : methodNode.instructions) {
             if (instruction instanceof LdcInsnNode && ((LdcInsnNode) instruction).cst instanceof Integer) {
                 int obfNumber = (int) ((LdcInsnNode) instruction).cst;
+
+                char[] chars = Integer.toBinaryString(obfNumber).toCharArray();
+                int availableShift = chars.length;
+
+                while (true) {
+                    if (0 > availableShift - 1) break;
+                    if (chars[availableShift - 1] == '1') break;
+                    availableShift--;
+                }
+
+                availableShift = chars.length - availableShift;
+
+                int shift = availableShift + ThreadLocalRandom.current().nextInt() * 32;
+                obfNumber = obfNumber >> availableShift;
 
                 // enc: val ^ key = enc
                 // dec: key ^ enc = key
@@ -52,15 +63,15 @@ public class NumberManglerPass extends AbstractMethodPass<NumberManglerPassOptio
                 methodNode.instructions.insertBefore(instruction, new LdcInsnNode(enc));
                 methodNode.instructions.insertBefore(instruction, new InsnNode(IXOR));
 
+                methodNode.instructions.insertBefore(instruction, new LdcInsnNode(shift));
+                methodNode.instructions.insertBefore(instruction, new InsnNode(ISHL));
+
                 // remove OG insn
                 methodNode.instructions.remove(instruction);
             }
         }
 
         // consts, xipush
-
-        // WORKING (CHECK)
-        bar.setExtraMessage("Mangling number constants");
         for (AbstractInsnNode instruction : methodNode.instructions) {
             Integer obfNumber = null;
 

@@ -11,9 +11,7 @@ import lombok.Getter;
 import me.tongfei.progressbar.ProgressBar;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class RemapNamesPass implements ClassPass<RemapNamesPass.Options> {
     @Getter public Options options = new Options();
@@ -53,5 +51,15 @@ public class RemapNamesPass implements ClassPass<RemapNamesPass.Options> {
         public boolean remapFieldNames = true;
         public boolean remapMethodNames = true;
         public boolean remapMethodParameterNames = true;
+
+        public List<String> excludedMethods = Arrays.asList(
+                "main ([Ljava/lang/String;)V",
+                "<init>",
+                "<clinit>"
+        );
+
+        public List<String> excludedFields = Collections.singletonList(
+                "serialVersionUID"
+        );
     }
 }

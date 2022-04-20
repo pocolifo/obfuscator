@@ -1,6 +1,5 @@
 package com.pocolifo.obfuscator.passes.remapping;
 
-import com.pocolifo.obfuscator.ObfuscatorOptions;
 import com.pocolifo.obfuscator.classes.ClassHierarchy;
 import com.pocolifo.obfuscator.classes.ClassHierarchyNode;
 import com.pocolifo.obfuscator.classes.ObfuscationClassKeeper;
@@ -19,15 +18,6 @@ import java.util.function.Consumer;
 
 public class MappingLoader {
     private static final List<String> OBFUSCATED_STRINGS = new ArrayList<>();
-    private static final List<String> EXCLUDED_METHODS = Arrays.asList(
-            "main([Ljava/lang/String;)V",
-            "<init>",
-            "<clinit>"
-    );
-
-    private static final List<String> EXCLUDED_FIELDS = Collections.singletonList(
-            "serialVersionUID"
-    );
 
     private static String getUniqueObfuscatedString() {
         String s = getObfuscatedString();
@@ -130,7 +120,7 @@ public class MappingLoader {
             for (FieldMapping fieldMapping : classMapping.fields.values()) {
                 if (fieldMapping.to != null) continue;
 
-                if (fieldNotDeclaredInParent(fieldMapping, classHierarchyNode) && options.remapFieldNames && !EXCLUDED_FIELDS.contains(fieldMapping.from)) {
+                if (fieldNotDeclaredInParent(fieldMapping, classHierarchyNode) && options.remapFieldNames && !options.excludedFields.contains(fieldMapping.from)) {
                     fieldMapping.to = getUniqueObfuscatedString();
                     propagateFieldNamesToChildren(classHierarchyNode, fieldMapping, mapping);
                 } else {
@@ -140,7 +130,10 @@ public class MappingLoader {
 
             for (MethodMapping methodMapping : classMapping.methods.values()) {
                 if (methodMapping.to != null) continue;
-                boolean excludedFromObfuscation = EXCLUDED_METHODS.contains(methodMapping.from) || EXCLUDED_METHODS.contains(methodMapping.from + methodMapping.desc);
+                boolean excludedFromObfuscation =
+                        options.excludedMethods.contains(methodMapping.from) || // from mapping
+                                options.excludedMethods.contains(methodMapping.desc) || // descriptor
+                                options.excludedMethods.contains(methodMapping.from + " " + methodMapping.desc); // name + descriptor
 
                 if (methodNotDeclaredInParent(methodMapping, classHierarchyNode) && options.remapMethodNames && !excludedFromObfuscation) {
                     methodMapping.to = getUniqueObfuscatedString();

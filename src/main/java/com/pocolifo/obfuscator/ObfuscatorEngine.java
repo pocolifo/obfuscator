@@ -3,13 +3,12 @@ package com.pocolifo.obfuscator;
 import com.pocolifo.obfuscator.classes.ClassHierarchy;
 import com.pocolifo.obfuscator.classes.ClassHierarchyNode;
 import com.pocolifo.obfuscator.classes.ObfuscationClassKeeper;
-import com.pocolifo.obfuscator.logger.Logging;
+import com.pocolifo.obfuscator.passes.ArchivePass;
+import com.pocolifo.obfuscator.passes.Options;
+import com.pocolifo.obfuscator.util.Logging;
 import com.pocolifo.obfuscator.passes.ClassPass;
 import com.pocolifo.obfuscator.passes.PassOptions;
-import com.pocolifo.obfuscator.passes.remapping.RemapNamesPass;
-import com.pocolifo.obfuscator.passes.shufflemembers.ShuffleMembersPass;
-import com.pocolifo.obfuscator.passes.sourcehints.RemoveSourceHintsPass;
-import com.pocolifo.obfuscator.passes.string.StringManglerPass;
+import com.pocolifo.obfuscator.util.FileUtil;
 import com.pocolifo.obfuscator.util.ProgressUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -43,12 +42,16 @@ public class ObfuscatorEngine {
             loadJars();
         } catch (Exception e) {
             e.printStackTrace();
-            Logging.fatal("Could not load JARs! Exception: %s", e);
+            Logging.warn("Could not load JARs! Continuing despite possibly fatal error... Exception: %s", e);
         }
 
         // hierarchy
         Logging.info("Creating class hierarchy");
         createHierarchy();
+
+        // archive passes
+        Logging.info("Running archive passes");
+        runArchivePasses();
 
         // obfuscate
         Logging.info("Beginning obfuscation");
@@ -59,6 +62,12 @@ public class ObfuscatorEngine {
 
         // end
         Logging.info("Finished obfuscation in %fs", (System.currentTimeMillis() - options.initTimestamp) / 1000f);
+    }
+
+    private void runArchivePasses() {
+        for (ArchivePass<?> archivePass : options.getApplicableArchivePasses(ArchivePassRunTime.BEFORE_CLASSES)) {
+            archivePass.run(this);
+        }
     }
 
     private void writeOutJar(Iterable<ClassNode> nodes) throws IOException {
@@ -86,10 +95,16 @@ public class ObfuscatorEngine {
             }
 
             for (ClassNode node : nodes) {
-                ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+                ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
                 node.accept(writer);
 
-                zos.putNextEntry(new ZipEntry(node.name + ".class"));
+                ZipEntry entry = new ZipEntry(node.name + ".class");
+
+                for (ArchivePass<?> archivePass : options.getApplicableArchivePasses(ArchivePassRunTime.AFTER_CLASSES)) {
+                    entry = archivePass.mutateZipEntry(node, entry);
+                }
+
+                zos.putNextEntry(entry);
                 zos.write(writer.toByteArray());
                 zos.closeEntry();
                 bar.step();
@@ -99,8 +114,13 @@ public class ObfuscatorEngine {
 
     private Iterable<ClassNode> doClassObfuscation() {
         Logging.info("Loaded passes:");
+
         for (ClassPass<? extends PassOptions> classPass : options.passes) {
             Logging.info("%s * %s", classPass.getOptions().enabled ? Logging.ANSI_GREEN : Logging.ANSI_RED, classPass.getClass().getSimpleName());
+        }
+
+        for (Options<? extends PassOptions> pass : options.archivePasses) {
+            Logging.info("%s * %s %s[archive]", pass.getOptions().enabled ? Logging.ANSI_GREEN : Logging.ANSI_RED, pass.getClass().getSimpleName(), Logging.ANSI_CYAN);
         }
 
         Collection<ClassNode> outClasses = classKeeper.inputClasses;
@@ -240,21 +260,17 @@ public class ObfuscatorEngine {
 
         Logging.info("Adding JRE and runtime jars");
 
-        File[] jreJars = new File(System.getProperty("java.home"), "lib").listFiles((file, s) -> s.endsWith(".jar"));
-        File[] jreJmods = new File(System.getProperty("java.home"), "jmods").listFiles((file, s) -> s.endsWith(".jmod"));
+        List<File> jreJars = FileUtil.recursivelyFindFiles(new File(System.getProperty("java.home"), "lib"), file -> file.getName().endsWith(".jar"), new ArrayList<>());
+        List<File> jreJmods = FileUtil.recursivelyFindFiles(new File(System.getProperty("java.home"), "jmods"), file -> file.getName().endsWith(".jmod"), new ArrayList<>());
 
-        if (jreJars != null) {
-            for (File library : jreJars) {
-                Logging.info("Found runtime library: %s%s", Logging.ANSI_CYAN, library.getAbsolutePath());
-                options.libraryJars.add(library);
-            }
+        for (File library : jreJars) {
+            Logging.info("Found runtime library: %s%s", Logging.ANSI_CYAN, library.getAbsolutePath());
+            options.libraryJars.add(library);
         }
 
-        if (jreJmods != null) {
-            for (File library : jreJmods) {
-                Logging.info("Found runtime library: %s%s", Logging.ANSI_CYAN, library.getAbsolutePath());
-                options.libraryJars.add(library);
-            }
+        for (File library : jreJmods) {
+            Logging.info("Found runtime library: %s%s", Logging.ANSI_CYAN, library.getAbsolutePath());
+            options.libraryJars.add(library);
         }
 
         // count
