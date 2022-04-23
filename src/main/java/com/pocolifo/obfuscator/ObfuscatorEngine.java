@@ -3,6 +3,7 @@ package com.pocolifo.obfuscator;
 import com.pocolifo.obfuscator.classes.ClassHierarchy;
 import com.pocolifo.obfuscator.classes.ClassHierarchyNode;
 import com.pocolifo.obfuscator.classes.ObfuscationClassKeeper;
+import com.pocolifo.obfuscator.classes.ObfuscationClassWriter;
 import com.pocolifo.obfuscator.passes.ArchivePass;
 import com.pocolifo.obfuscator.passes.Options;
 import com.pocolifo.obfuscator.util.Logging;
@@ -95,7 +96,7 @@ public class ObfuscatorEngine {
             }
 
             for (ClassNode node : nodes) {
-                ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+                ClassWriter writer = new ObfuscationClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
                 node.accept(writer);
 
                 ZipEntry entry = new ZipEntry(node.name + ".class");
@@ -279,6 +280,8 @@ public class ObfuscatorEngine {
 
         try (ProgressBar bar = ProgressUtil.bar("Loading input JARs", jarsToLoad); FileInputStream fis = new FileInputStream(options.inJar)) {
             classKeeper.loadInputJar(fis);
+            ObfuscationClassKeeper.prepareJarOnToClasspath(options.inJar);
+
             bar.step();
 
             AtomicReference<Exception> exception = new AtomicReference<>();
@@ -289,6 +292,8 @@ public class ObfuscatorEngine {
                     if (file.getName().endsWith(".jmod")) {
                         classKeeper.loadDependencyJmod(file.toPath());
                     } else {
+                        ObfuscationClassKeeper.prepareJarOnToClasspath(file);
+
                         try (FileInputStream depStream = new FileInputStream(file)) {
                             classKeeper.loadDependencyJar(depStream);
                         }
@@ -303,6 +308,8 @@ public class ObfuscatorEngine {
             if (exception.get() != null) {
                 throw exception.get();
             }
+
+            ObfuscationClassKeeper.initializeClassLoader();
         }
     }
 }

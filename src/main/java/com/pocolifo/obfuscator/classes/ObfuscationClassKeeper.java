@@ -3,9 +3,13 @@ package com.pocolifo.obfuscator.classes;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -14,6 +18,9 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 public class ObfuscationClassKeeper {
+    public static List<URL> jarUrls = new ArrayList<>();
+    public static URLClassLoader classLoader;
+
     public Queue<ClassNode> inputClasses = new ConcurrentLinkedQueue<>();
     public Queue<ClassNode> allClasses = new ConcurrentLinkedQueue<>();
     public Queue<ClassNode> dependencyClasses = new ConcurrentLinkedQueue<>();
@@ -63,5 +70,13 @@ public class ObfuscationClassKeeper {
 
     public void loadDependencyJmod(Path path) throws IOException {
         loadJmod(path, dependencyClasses, ClassReader.SKIP_CODE);
+    }
+
+    public static void prepareJarOnToClasspath(File jar) throws MalformedURLException {
+        jarUrls.add(jar.toURI().toURL());
+    }
+
+    public static void initializeClassLoader() {
+        classLoader = new URLClassLoader(jarUrls.toArray(new URL[0]), ClassLoader.getSystemClassLoader());
     }
 }
