@@ -105,7 +105,7 @@ public class ConfigurationLoader {
         return new ObfuscatorOptions();
     }
 
-    public static void dumpDefault(File to) throws IllegalAccessException, IOException {
+    public static String dumpDefault() throws IllegalAccessException {
         JsonObject obj = new JsonObject();
         ObfuscatorOptions def = loadDefaultConfiguration();
 
@@ -124,8 +124,7 @@ public class ConfigurationLoader {
         obj.add("passes", passes);
 
 
-        String json = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(obj);
-        Files.write(to.toPath(), json.getBytes(StandardCharsets.UTF_8));
+        return new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(obj);
     }
 
     private static JsonObject getClassAsObject(Object instance) throws IllegalAccessException {

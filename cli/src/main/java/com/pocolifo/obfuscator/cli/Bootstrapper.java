@@ -7,21 +7,29 @@ import lombok.SneakyThrows;
 
 import java.io.File;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 
 public class Bootstrapper {
     @SneakyThrows
     public static void main(String[] args) {
-        Logging.welcome();
-
         if (args.length > 0) {
             if (args[0].equalsIgnoreCase("--dump-default-config")) {
-                File config = new File("default-config.config.json");
-                ConfigurationLoader.dumpDefault(config);
+                String cfg = ConfigurationLoader.dumpDefault();
 
-                Logging.info("%sSuccessfully dumped default configuration to %s", Logging.ANSI_GREEN, config.getAbsolutePath());
+                if (args.length > 1) {
+                    File config = new File(args[1]);
+                    Files.write(config.toPath(), cfg.getBytes(StandardCharsets.UTF_8), StandardOpenOption.WRITE);
+
+                    Logging.welcome();
+                    Logging.info("%sSuccessfully dumped default configuration to %s", Logging.ANSI_GREEN, config.getAbsolutePath());
+                } else {
+                    System.out.println(cfg);
+                }
             } else {
+                Logging.welcome();
 
                 File configFile = null;
                 File inputFile = null;
@@ -66,6 +74,7 @@ public class Bootstrapper {
             URI uri = Bootstrapper.class.getProtectionDomain().getCodeSource().getLocation().toURI();
             String path = new File("").toURI().relativize(uri).getPath();
 
+            Logging.welcome();
             Logging.fatal("improper usage; proper usage: java -jar %s [--dump-default-config] [path to JAR to obfuscate] [path of obfuscation config (optional)].config.json", path);
         }
     }
