@@ -1,6 +1,6 @@
 package com.pocolifo.obfuscator.passes.antidecompile;
 
-import com.pocolifo.obfuscator.ArchivePassRunTime;
+import com.pocolifo.obfuscator.passes.ArchivePassRunTime;
 import com.pocolifo.obfuscator.ObfuscatorEngine;
 import com.pocolifo.obfuscator.passes.ArchivePass;
 import lombok.Getter;

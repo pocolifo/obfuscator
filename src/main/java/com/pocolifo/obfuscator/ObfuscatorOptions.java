@@ -1,6 +1,7 @@
 package com.pocolifo.obfuscator;
 
 import com.pocolifo.obfuscator.passes.ArchivePass;
+import com.pocolifo.obfuscator.passes.ArchivePassRunTime;
 import com.pocolifo.obfuscator.passes.ClassPass;
 import com.pocolifo.obfuscator.passes.antidecompile.AntiDecompileArchivePass;
 import com.pocolifo.obfuscator.passes.flowcontrol.FlowControlPass;

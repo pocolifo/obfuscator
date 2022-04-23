@@ -1,4 +1,4 @@
-package com.pocolifo.obfuscator;
+package com.pocolifo.obfuscator.passes;
 
 public enum ArchivePassRunTime {
     BEFORE_CLASSES,

@@ -1,6 +1,5 @@
 package com.pocolifo.obfuscator.passes;
 
-import com.pocolifo.obfuscator.ArchivePassRunTime;
 import com.pocolifo.obfuscator.ObfuscatorEngine;
 import org.objectweb.asm.tree.ClassNode;
 
