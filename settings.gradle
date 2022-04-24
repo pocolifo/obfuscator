@@ -1,4 +1,7 @@
-include 'cli'
+include 'com.pocolifo.obfuscator.engine'
+include 'com.pocolifo.obfuscator.cli'
+include 'com.pocolifo.obfuscator.annotations'
+include 'com.pocolifo.obfuscator.testproject'
 
 rootProject.name = 'obfuscator'
 

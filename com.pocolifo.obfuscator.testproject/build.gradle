@@ -1,0 +1,19 @@
+plugins {
+    id 'java'
+}
+
+group 'com.pocolifo.obfuscator'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':com.pocolifo.obfuscator.annotations')
+}
+
+jar {
+    // for consistency
+    archiveName('testproject.jar')
+}
