@@ -18,6 +18,7 @@ import com.pocolifo.obfuscator.engine.passes.string.StringManglerPass;
 import com.pocolifo.obfuscator.engine.util.DynamicOption;
 import com.pocolifo.obfuscator.engine.util.Logging;
 import com.pocolifo.obfuscator.engine.util.NotConfigOption;
+import lombok.Data;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 
 
+@Data
 public class ObfuscatorOptions {
     @NotConfigOption protected long initTimestamp;
     @NotConfigOption public File inJar;
@@ -35,7 +37,7 @@ public class ObfuscatorOptions {
     public File outJar = new File("output.jar");
     public boolean dumpHierarchy = false;
 
-    public Iterable<ClassPass<?>> passes = Arrays.asList(
+    public List<ClassPass<?>> passes = Arrays.asList(
             new GarbageMembersPass(),
             new RemapNamesPass(),
             new RemoveSourceHintsPass(),
@@ -47,7 +49,7 @@ public class ObfuscatorOptions {
             new RemoveObfuscatorAnnotationsPass()
     );
 
-    public Iterable<ArchivePass<?>> archivePasses = Arrays.asList(
+    public List<ArchivePass<?>> archivePasses = Arrays.asList(
             new FakeClassAsResourceArchivePass(),
             new AntiDecompileArchivePass(),
             new RemapResourceNamesArchivePass()

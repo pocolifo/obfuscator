@@ -6,12 +6,13 @@ import org.objectweb.asm.tree.ClassNode;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClassMapping extends Mapping {
     public ClassNode node;
 
-    public Map<String, FieldMapping> fields = new HashMap<>();
-    public Map<String, MethodMapping> methods = new HashMap<>();
+    public Map<String, FieldMapping> fields = new ConcurrentHashMap<>();
+    public Map<String, MethodMapping> methods = new ConcurrentHashMap<>();
 
     public void addFieldMapping(FieldMapping mapping) {
         if (fields.containsKey(mapping.from)) throw new RuntimeException("mapping already for field: " + mapping.from);

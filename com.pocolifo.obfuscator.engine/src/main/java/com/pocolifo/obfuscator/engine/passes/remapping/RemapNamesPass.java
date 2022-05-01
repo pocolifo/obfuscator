@@ -57,6 +57,10 @@ public class RemapNamesPass implements ClassPass<RemapNamesPass.Options> {
         public boolean remapMethodNames = true;
         public boolean remapMethodParameterNames = true;
 
+        public List<String> excludedClasses = Arrays.asList(
+                "module-info"
+        );
+
         public List<String> excludedMethods = Arrays.asList(
                 "main ([Ljava/lang/String;)V",
                 "<init>",

@@ -36,8 +36,7 @@ public class Logging {
     }
 
     public static void fatal(String string, Object... objects) {
-        if (enable) System.err.printf(ANSI_RED + "%s [FATAL] %s%s%n", getLogPrefix(), String.format(string, objects), ANSI_RESET);
-        System.exit(-1);
+        throw new RuntimeException(String.format(ANSI_RED + "%s [FATAL] %s%s%n", getLogPrefix(), String.format(string, objects), ANSI_RESET));
     }
 
     public static void welcome() {

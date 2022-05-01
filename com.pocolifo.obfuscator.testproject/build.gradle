@@ -1,19 +1,52 @@
-plugins {
-    id 'java'
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath project(':com.pocolifo.obfuscator.gradleplugin')
+    }
 }
+
+apply plugin: 'java'
+apply plugin: 'com.pocolifo.obfuscator.plugin'
 
 group 'com.pocolifo.obfuscator'
 version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+
+    maven {
+        url 'https://maven.services.pocolifo.com/releases'
+    }
 }
 
 dependencies {
     implementation project(':com.pocolifo.obfuscator.annotations')
+    implementation 'com.pocolifo:commons:1.2.0'
 }
 
 jar {
     // for consistency
     archiveName('testproject.jar')
+}
+
+if (pluginManager.hasPlugin('com.pocolifo.obfuscator.plugin')) {
+    obfuscate.dependsOn(':com.pocolifo.obfuscator.gradleplugin:build')
+
+    obfuscator {
+        pass("GarbageMembersPass") {
+            addFields = true
+            addMethods = true
+        }
+
+        pass("AntiDecompileArchivePass") {
+            fakeZipDirectory = false
+        }
+
+        pass("RemapNamesPass") {
+            excludedMethods += 'iShouldBeExcluded'
+        }
+    }
 }

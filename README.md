@@ -18,3 +18,16 @@ Contains annotations that allow you to configure the obfuscator inside your Java
 
 ### `com.pocolifo.obfuscator.testproject` / Testing
 A demo project that is used to test the obfuscation engine to see if it works.
+
+### `com.pocolifo.obfuscator.gradleplugin` / Gradle Plugin Interface
+A Gradle plugin to interface with the obfuscation engine.
+
+## Requirements
+### To run
+- A Java 8 compatible JVM & JRE
+- An interface for the obfuscation engine (CLI, Gradle plugin)
+- A JAR to obfuscate
+
+### To develop
+- A Java 8 compatible JVM
+- A JDK for Java 8

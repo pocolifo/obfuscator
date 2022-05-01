@@ -50,13 +50,11 @@ public class MappingLoader {
         JarMapping mapping = new JarMapping();
 
         // create the mapping
-        for (ClassNode cls : classKeeper.inputClasses) {
+        classKeeper.inputClasses.parallelStream().forEach(cls -> {
             ClassMapping classMapping = new ClassMapping();
-
             classMapping.node = cls;
             classMapping.from = cls.name;
             classMapping.to = null; // it's null because it hasn't been remapped yet
-
             for (MethodNode method : cls.methods) {
                 MethodMapping methodMapping = new MethodMapping();
 
@@ -80,7 +78,6 @@ public class MappingLoader {
 
                 classMapping.addMethodMapping(methodMapping);
             }
-
             for (FieldNode field : cls.fields) {
                 FieldMapping fieldMapping = new FieldMapping();
 
@@ -90,20 +87,20 @@ public class MappingLoader {
 
                 classMapping.addFieldMapping(fieldMapping);
             }
-
             mapping.addClassMapping(classMapping);
-        }
+        });
 
 
         // obfuscate the mapping
-        List<ClassMapping> fixNestedClasses = new ArrayList<>();
-        RemapNamesPass.Options options;
+        final List<ClassMapping> fixNestedClasses = new ArrayList<>();
 
-        for (ClassMapping classMapping : mapping.classes.values()) {
+        mapping.classes.values().parallelStream().forEach(classMapping -> {
+            RemapNamesPass.Options options;
+
             ClassHierarchyNode classHierarchyNode = hierarchy.find(classMapping.from);
             options = (RemapNamesPass.Options) ObfAnnotationsUtil.getOptions(classMapping.node, RemapNamesPass.class, defaultOptions);
 
-            if (options.remapClassNames) {
+            if (options.remapClassNames && !options.excludedClasses.contains(classMapping.from)) {
                 ClassName className = new ClassName(classMapping.from);
 
                 if (className.anonymousClass) {
@@ -156,12 +153,14 @@ public class MappingLoader {
                     parameterMapping.to = options.remapMethodParameterNames ? getUniqueObfuscatedString() : parameterMapping.from;
                 }
             }
-        }
+        });
 
         // update nested class names
         for (ClassMapping classMapping : fixNestedClasses) {
             ClassName className = new ClassName(classMapping.to);
             ClassMapping parentClass = mapping.resolveClass(className.parentClass.toString(), NameType.FROM);
+
+            if (parentClass == null) throw new RuntimeException("null parent: " + className.toString());
 
             className.parentClass = new ClassName(parentClass.to);
             classMapping.to = className.toString();

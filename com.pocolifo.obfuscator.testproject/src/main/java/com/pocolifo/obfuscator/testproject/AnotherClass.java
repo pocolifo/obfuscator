@@ -17,4 +17,8 @@ public class AnotherClass {
     public void overrideMe() {
         System.out.println("I haven't been overridden");
     }
+
+    public void iShouldBeExcluded() {
+        System.out.println("Am I remapped?");
+    }
 }

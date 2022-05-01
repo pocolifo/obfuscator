@@ -65,6 +65,7 @@ public class ObfuscatorEngine {
 
         // end
         Logging.info("Finished process in %fs", (System.currentTimeMillis() - options.initTimestamp) / 1000f);
+        Logging.info("Obfuscated JAR is at %s%s", Logging.ANSI_CYAN, options.outJar.getAbsolutePath());
     }
 
     private void runFinalArchivePasses() {

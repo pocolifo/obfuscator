@@ -21,9 +21,9 @@ public class GarbageMembersPass implements ClassPass<GarbageMembersPass.Options>
     @Override
     public Collection<ClassNode> run(ObfuscatorEngine engine, Collection<ClassNode> inClasses) {
         try (ProgressBar bar = ProgressUtil.bar("Adding garbage members", inClasses.size())) {
-            for (ClassNode node : inClasses) {
+            inClasses.parallelStream().forEach(node -> {
                 boolean isInterface = (node.access & Opcodes.ACC_INTERFACE) != 0;
-                 Options clsOpts = (Options) ObfAnnotationsUtil.getOptions(node, GarbageMembersPass.class, options);
+                Options clsOpts = (Options) ObfAnnotationsUtil.getOptions(node, GarbageMembersPass.class, options);
 
                 if (clsOpts.addMethods) {
                     for (int i = 0; ThreadLocalRandom.current().nextInt(4, 10) > i; i++) {
@@ -46,7 +46,7 @@ public class GarbageMembersPass implements ClassPass<GarbageMembersPass.Options>
                 }
 
                 bar.step();
-            }
+            });
         }
 
         return inClasses;

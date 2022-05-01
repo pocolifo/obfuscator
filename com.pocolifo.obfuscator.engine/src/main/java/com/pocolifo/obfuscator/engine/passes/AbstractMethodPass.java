@@ -14,15 +14,14 @@ public abstract class AbstractMethodPass<T extends PassOptions> implements Class
     @Override
     public Collection<ClassNode> run(ObfuscatorEngine engine, Collection<ClassNode> inClasses) {
         try (ProgressBar bar = ProgressUtil.bar(getPassName(), inClasses.size())) {
-            for (ClassNode cls : inClasses) {
+            inClasses.parallelStream().forEach(cls -> {
                 for (MethodNode mtd : cls.methods) {
                     // we've already checked if this pass is enabled
                     T options = (T) ObfAnnotationsUtil.getOptions(mtd, cls, this.getClass(), this.getOptions());
                     doMethod(engine, inClasses, cls, mtd, bar, options);
                 }
-
                 bar.step();
-            }
+            });
         }
 
         return inClasses;

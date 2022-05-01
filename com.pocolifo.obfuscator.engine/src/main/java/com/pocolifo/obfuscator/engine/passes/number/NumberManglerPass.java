@@ -44,7 +44,7 @@ public class NumberManglerPass extends AbstractMethodPass<NumberManglerPassOptio
 
                 availableShift = chars.length - availableShift;
 
-                int shift = availableShift + ThreadLocalRandom.current().nextInt() * 32;
+                int shift = availableShift + ThreadLocalRandom.current().nextInt() * 32; // 32 bit ints
                 obfNumber = obfNumber >> availableShift;
 
                 // enc: val ^ key = enc
