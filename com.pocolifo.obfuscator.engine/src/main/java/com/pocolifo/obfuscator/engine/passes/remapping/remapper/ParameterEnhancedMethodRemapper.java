@@ -22,6 +22,8 @@ public class ParameterEnhancedMethodRemapper extends MethodRemapper {
         ClassMapping cMapping = mapping.resolveClass(((ClassNode) cv).name, NameType.TO);
         MethodNode mn = (MethodNode) mv;
 
+        if (cMapping == null) throw new IllegalStateException("could not resolve class (TO) " + ((ClassNode) cv).name);
+
         methodMapping = cMapping.resolveMethod(mn.name, mn.desc, remapper, NameType.TO);
     }
 

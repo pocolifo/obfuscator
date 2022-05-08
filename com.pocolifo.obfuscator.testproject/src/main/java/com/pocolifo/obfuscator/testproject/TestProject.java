@@ -3,6 +3,8 @@ package com.pocolifo.obfuscator.testproject;
 import com.pocolifo.obfuscator.annotations.Pass;
 import com.pocolifo.obfuscator.annotations.PassOption;
 
+import java.util.Arrays;
+
 @Pass(value = "StringManglerPass", options = {
         @PassOption(key = "enabled", value = "false")
 })
@@ -18,5 +20,11 @@ public class TestProject {
         child.myMethod();
         child.overrideMe();
         child.sayHello();
+
+        if (anotherClass.isTrue()) {
+            System.out.println("AnotherClass#isTrue returned true");
+        } else {
+            System.out.println("AnotherClass#isTrue didn't return true");
+        }
     }
 }

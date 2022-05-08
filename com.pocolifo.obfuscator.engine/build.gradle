@@ -1,5 +1,8 @@
+import org.gradle.api.publish.maven.MavenPublication
+
 plugins {
     id 'java'
+    id 'maven-publish'
 }
 
 group 'com.pocolifo.obfuscator'
@@ -36,4 +39,16 @@ task fatJar(type: org.gradle.jvm.tasks.Jar) {
 
     duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
     with jar
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            pom {
+                artifactId = 'engine'
+            }
+
+            from components['java']
+        }
+    }
 }

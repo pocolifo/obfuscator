@@ -6,20 +6,28 @@ import com.pocolifo.obfuscator.gradleplugin.ObfuscatorGradlePlugin;
 import lombok.Getter;
 import lombok.Setter;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.provider.Provider;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.OutputFile;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.*;
 import org.gradle.jvm.tasks.Jar;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
+@Getter @Setter
 public class ObfuscateTask extends DefaultTask {
-    @OutputFile @Getter @Setter
+    @OutputFile
     public Provider<File> outputFile;
 
-    @InputFile @Getter @Setter
+    @InputFile
     public Provider<File> inputFile;
+
+    @InputFiles
+    public List<Configuration> libraries;
+
+    @Input
+    public Provider<ObfuscatorOptions> obfuscatorOptions;
 
     public ObfuscateTask() {
         dependsOn("jar");
@@ -27,17 +35,21 @@ public class ObfuscateTask extends DefaultTask {
         setGroup(ObfuscatorGradlePlugin.GROUP);
         setDescription("Generates an obfuscated JAR");
 
+        libraries = new ArrayList<>();
+        libraries.add(getProject().getConfigurations().getByName("runtimeClasspath"));
+
         outputFile = getProject().provider(() -> new File(((Jar) getProject().getTasks().getByName("jar")).getArchiveFile().get().getAsFile().getPath() + "-obfuscated.jar"));
         inputFile = getProject().provider(() -> ((Jar) getProject().getTasks().getByName("jar")).getArchiveFile().get().getAsFile());
+        obfuscatorOptions = getProject().provider(() -> ObfuscatorGradlePlugin.getPlugin().config.getObfuscatorOptions());
     }
 
     @TaskAction
     public void obfuscate() {
-        ObfuscatorOptions obfuscatorOptions = ObfuscatorGradlePlugin.getPlugin().config.getObfuscatorOptions();
+        ObfuscatorOptions obfuscatorOptions = getObfuscatorOptions().get();
 
         obfuscatorOptions.inJar = inputFile.get();
         obfuscatorOptions.outJar = outputFile.get();
-        obfuscatorOptions.libraryJars.addAll(getProject().getConfigurations().getByName("runtimeClasspath").getFiles());
+        libraries.forEach(files -> obfuscatorOptions.libraryJars.addAll(files.getFiles()));
 
         obfuscatorOptions.prepare();
 

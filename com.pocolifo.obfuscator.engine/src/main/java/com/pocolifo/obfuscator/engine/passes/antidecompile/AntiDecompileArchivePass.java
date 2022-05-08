@@ -26,8 +26,8 @@ public class AntiDecompileArchivePass implements ArchivePass<AntiDecompileOption
             entry.setCrc(ThreadLocalRandom.current().nextLong(4294967295L));
         }
 
-        if (options.invalidZipEntryTime) {
-            entry.setTime(Long.MIN_VALUE);
+        if (options.garbageZipEntryTime) {
+            entry.setTime(ThreadLocalRandom.current().nextLong());
         }
 
         if (options.randomCompressedSize) {

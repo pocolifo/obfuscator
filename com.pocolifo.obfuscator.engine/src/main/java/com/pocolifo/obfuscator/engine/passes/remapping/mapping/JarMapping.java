@@ -22,4 +22,20 @@ public class JarMapping {
 
         return null;
     }
+
+    public boolean isFieldInMapping(String className, String fieldName, NameType type) {
+        ClassMapping classMapping = resolveClass(className, type);
+
+        if (classMapping == null) return false;
+
+        return classMapping.resolveField(fieldName, type) != null;
+    }
+
+    public boolean isMethodInMapping(String className, String methodName, String descriptor, NameType type) {
+        ClassMapping classMapping = resolveClass(className, type);
+
+        if (classMapping == null) return false;
+
+        return classMapping.resolveMethod(methodName, descriptor, type) != null;
+    }
 }

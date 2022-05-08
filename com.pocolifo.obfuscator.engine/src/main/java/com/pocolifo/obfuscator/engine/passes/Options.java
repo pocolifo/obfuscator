@@ -1,5 +1,7 @@
 package com.pocolifo.obfuscator.engine.passes;
 
-public interface Options<T extends PassOptions> {
+import java.io.Serializable;
+
+public interface Options<T extends PassOptions> extends Serializable {
     T getOptions();
 }

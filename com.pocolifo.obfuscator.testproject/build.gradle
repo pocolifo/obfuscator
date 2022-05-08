@@ -1,3 +1,5 @@
+import com.pocolifo.obfuscator.engine.util.obfstring.TwoLetterObfuscatedStringSupplier
+
 buildscript {
     repositories {
         mavenCentral()
@@ -9,7 +11,7 @@ buildscript {
 }
 
 apply plugin: 'java'
-apply plugin: 'com.pocolifo.obfuscator.plugin'
+apply plugin: 'com.pocolifo.obfuscator.gradleplugin'
 
 group 'com.pocolifo.obfuscator'
 version '1.0-SNAPSHOT'
@@ -20,21 +22,28 @@ repositories {
     maven {
         url 'https://maven.services.pocolifo.com/releases'
     }
+
+    maven {
+        url 'https://repo.spongepowered.org/maven'
+    }
 }
 
 dependencies {
-    implementation project(':com.pocolifo.obfuscator.annotations')
+    compileOnly project(':com.pocolifo.obfuscator.annotations')
     implementation 'com.pocolifo:commons:1.2.0'
+    implementation 'org.spongepowered:mixin:0.7.11-SNAPSHOT'
 }
 
 jar {
     // for consistency
     archiveName('testproject.jar')
+
+    manifest {
+        attributes('Main-Class': 'com.pocolifo.obfuscator.testproject.TestProject')
+    }
 }
 
-if (pluginManager.hasPlugin('com.pocolifo.obfuscator.plugin')) {
-    obfuscate.dependsOn(':com.pocolifo.obfuscator.gradleplugin:build')
-
+if (pluginManager.hasPlugin('com.pocolifo.obfuscator.gradleplugin')) {
     obfuscator {
         pass("GarbageMembersPass") {
             addFields = true
@@ -47,6 +56,9 @@ if (pluginManager.hasPlugin('com.pocolifo.obfuscator.plugin')) {
 
         pass("RemapNamesPass") {
             excludedMethods += 'iShouldBeExcluded'
+            obfuscatedStringSupplier = new TwoLetterObfuscatedStringSupplier.LetterA()
         }
     }
 }
+
+compileJava.options.encoding = 'UTF-8'

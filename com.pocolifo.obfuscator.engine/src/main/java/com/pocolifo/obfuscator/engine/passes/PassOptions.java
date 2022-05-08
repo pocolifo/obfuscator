@@ -1,5 +1,7 @@
 package com.pocolifo.obfuscator.engine.passes;
 
-public class PassOptions {
+import java.io.Serializable;
+
+public class PassOptions implements Serializable {
     public boolean enabled = true;
 }

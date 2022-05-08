@@ -30,11 +30,23 @@ gradlePlugin {
     plugins {
         obfuscatorPlugin {
             implementationClass = 'com.pocolifo.obfuscator.gradleplugin.ObfuscatorGradlePlugin'
-            id = 'com.pocolifo.obfuscator.plugin'
+            id = 'com.pocolifo.obfuscator.gradleplugin'
         }
     }
 }
 
 test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            pom {
+                artifactId = 'gradleplugin'
+            }
+
+            from components['java']
+        }
+    }
 }

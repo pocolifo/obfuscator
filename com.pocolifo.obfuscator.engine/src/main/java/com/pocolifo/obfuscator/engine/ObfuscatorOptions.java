@@ -6,7 +6,7 @@ import com.pocolifo.obfuscator.engine.passes.ClassPass;
 import com.pocolifo.obfuscator.engine.passes.antidecompile.AntiDecompileArchivePass;
 import com.pocolifo.obfuscator.engine.passes.antidecompile.AntiDecompilePass;
 import com.pocolifo.obfuscator.engine.passes.antidecompile.FakeClassAsResourceArchivePass;
-import com.pocolifo.obfuscator.engine.passes.flowcontrol.FlowControlPass;
+import com.pocolifo.obfuscator.engine.passes.ifstatement.IfStatementPass;
 import com.pocolifo.obfuscator.engine.passes.garbagemembers.GarbageMembersPass;
 import com.pocolifo.obfuscator.engine.passes.number.NumberManglerPass;
 import com.pocolifo.obfuscator.engine.passes.obfannotations.RemoveObfuscatorAnnotationsPass;
@@ -21,6 +21,7 @@ import com.pocolifo.obfuscator.engine.util.NotConfigOption;
 import lombok.Data;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,7 +29,7 @@ import java.util.List;
 
 
 @Data
-public class ObfuscatorOptions {
+public class ObfuscatorOptions implements Serializable {
     @NotConfigOption protected long initTimestamp;
     @NotConfigOption public File inJar;
     @DynamicOption public File javaHome = new File(System.getProperty("java.home"));
@@ -41,10 +42,10 @@ public class ObfuscatorOptions {
             new GarbageMembersPass(),
             new RemapNamesPass(),
             new RemoveSourceHintsPass(),
+            new IfStatementPass(),
             new StringManglerPass(),
             new NumberManglerPass(),
             new ShuffleMembersPass(),
-            new FlowControlPass(),
             new AntiDecompilePass(),
             new RemoveObfuscatorAnnotationsPass()
     );

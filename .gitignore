@@ -45,3 +45,4 @@ replay_pid*
 # project files
 *.jar
 hierarchy.txt
+*.config.json

@@ -5,11 +5,14 @@ import com.pocolifo.obfuscator.engine.classes.ClassHierarchy;
 import com.pocolifo.obfuscator.engine.classes.ObfuscationClassKeeper;
 import com.pocolifo.obfuscator.engine.passes.ClassPass;
 import com.pocolifo.obfuscator.engine.passes.PassOptions;
+import com.pocolifo.obfuscator.engine.util.obfstring.AlphabetObfuscatedStringSupplier;
 import com.pocolifo.obfuscator.engine.passes.remapping.mapping.JarMapping;
 import com.pocolifo.obfuscator.engine.passes.remapping.mapping.MappingLoader;
+import com.pocolifo.obfuscator.engine.util.obfstring.ObfuscatedStringSupplier;
 import com.pocolifo.obfuscator.engine.passes.remapping.remapper.JarMappingRemapper;
 import com.pocolifo.obfuscator.engine.passes.remapping.remapper.ParameterEnhancedClassRemapper;
 import com.pocolifo.obfuscator.engine.util.ProgressUtil;
+import com.pocolifo.obfuscator.engine.util.obfstring.TwoLetterObfuscatedStringSupplier;
 import lombok.Getter;
 import me.tongfei.progressbar.ProgressBar;
 import org.objectweb.asm.tree.ClassNode;
@@ -25,11 +28,12 @@ public class RemapNamesPass implements ClassPass<RemapNamesPass.Options> {
         ClassHierarchy hierarchy = engine.getHierarchy();
 
         List<ClassNode> remappedClasses = new ArrayList<>();
+        MappingLoader mappingLoader = new MappingLoader(options.obfuscatedStringSupplier);
 
         try (ProgressBar bar = ProgressUtil.bar("Remapping names", inClasses.size())) {
             // mappings
             bar.setExtraMessage("Generating mappings");
-            JarMapping mapping = MappingLoader.generateMapping(hierarchy, classKeeper, options);
+            JarMapping mapping = mappingLoader.generateMapping(hierarchy, classKeeper, options);
 
             // remap
             bar.setExtraMessage("Remapping");
@@ -70,5 +74,7 @@ public class RemapNamesPass implements ClassPass<RemapNamesPass.Options> {
         public List<String> excludedFields = Collections.singletonList(
                 "serialVersionUID"
         );
+
+        public ObfuscatedStringSupplier obfuscatedStringSupplier = new TwoLetterObfuscatedStringSupplier.LetterI();
     }
 }
