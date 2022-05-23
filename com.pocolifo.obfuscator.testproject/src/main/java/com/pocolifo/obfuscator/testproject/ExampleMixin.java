@@ -8,7 +8,8 @@ import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Pass(value = "RemapNamesPass", options = {
-        @PassOption(key = "remapMethodNames", value = "true")
+        @PassOption(key = "remapMethodNames", value = "true"),
+        @PassOption(key = "remapClassNames", value = "false")
 })
 @Mixin(AnotherClass.class)
 public abstract class ExampleMixin {

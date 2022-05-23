@@ -29,7 +29,6 @@ public class MappingLoader implements Serializable {
         this.obfuscatedStringProvider = obfuscatedStringProvider;
     }
 
-
     public String getUniqueObfuscatedString() {
         while (true) {
             String s = this.obfuscatedStringProvider.get();
@@ -40,7 +39,6 @@ public class MappingLoader implements Serializable {
             }
         }
     }
-
 
     private static <T> Stream<T> getAppropriateStreamForSize(Collection<T> ts) {
         // parallelStream only if big
@@ -146,7 +144,7 @@ public class MappingLoader implements Serializable {
         boolean canBeObfuscated = options.remapClassNames && !options.excludedClasses.contains(classMapping.from);
 
         if (canBeObfuscated) {
-            // obfuscate the class anme
+            // obfuscate the class name
             ClassName className = new ClassName(classMapping.from);
 
             // fix anonymous class stuff
@@ -192,7 +190,7 @@ public class MappingLoader implements Serializable {
             ClassName className = new ClassName(classMapping.to);
             ClassMapping parentClass = mapping.resolveClass(className.parentClass.toString(), NameType.FROM);
 
-            if (parentClass == null) throw new RuntimeException("null parent: " + className.toString());
+            if (parentClass == null) throw new RuntimeException("null parent: " + className);
 
             className.parentClass = new ClassName(parentClass.to);
             classMapping.to = className.toString();
@@ -203,10 +201,10 @@ public class MappingLoader implements Serializable {
         final List<ClassMapping> fixNestedClasses = new ArrayList<>();
 
         getAppropriateStreamForSize(mapping.classes.values()).forEach(classMapping -> {
-            RemapNamesPass.Options options;
+            RemapNamesPass.Options options = (RemapNamesPass.Options) ObfAnnotationsUtil.getOptions(classMapping.node, RemapNamesPass.class, defaultOptions);
+            System.out.println(classMapping.from + " : " + options.remapClassNames);
 
             ClassHierarchyNode classHierarchyNode = hierarchy.find(classMapping.from);
-            options = (RemapNamesPass.Options) ObfAnnotationsUtil.getOptions(classMapping.node, RemapNamesPass.class, defaultOptions);
 
             obfuscateClass(classHierarchyNode, options, mapping, classMapping, fixNestedClasses);
         });

@@ -4,7 +4,6 @@ import com.pocolifo.obfuscator.engine.passes.remapping.name.NameType;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,7 +36,7 @@ public class ClassMapping extends Mapping {
 
     public MethodMapping resolveMethod(String name, String descriptor, NameType nameType) {
         for (MethodMapping mdm : methods.values()) {
-            if (NameType.compare(nameType, mdm, name) && mdm.desc.equals(descriptor)) {
+            if (NameType.compare(nameType, mdm, name) && (descriptor == null || mdm.desc.equals(descriptor))) {
                 return mdm;
             }
         }
@@ -53,5 +52,12 @@ public class ClassMapping extends Mapping {
         }
 
         return null;
+    }
+
+    public Mapping resolveMember(String name, NameType nameType) {
+        MethodMapping mdm = resolveMethod(name, null, nameType);
+        if (mdm != null) return mdm;
+
+        return resolveField(name, nameType);
     }
 }

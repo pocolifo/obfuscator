@@ -6,7 +6,8 @@ import com.pocolifo.obfuscator.engine.passes.ClassPass;
 import com.pocolifo.obfuscator.engine.passes.antidecompile.AntiDecompileArchivePass;
 import com.pocolifo.obfuscator.engine.passes.antidecompile.AntiDecompilePass;
 import com.pocolifo.obfuscator.engine.passes.antidecompile.FakeClassAsResourceArchivePass;
-import com.pocolifo.obfuscator.engine.passes.ifstatement.IfStatementPass;
+import com.pocolifo.obfuscator.engine.passes.bytecodescrambler.BytecodeScrambler;
+import com.pocolifo.obfuscator.engine.passes.flow.FlowPass;
 import com.pocolifo.obfuscator.engine.passes.garbagemembers.GarbageMembersPass;
 import com.pocolifo.obfuscator.engine.passes.number.NumberManglerPass;
 import com.pocolifo.obfuscator.engine.passes.obfannotations.RemoveObfuscatorAnnotationsPass;
@@ -15,10 +16,11 @@ import com.pocolifo.obfuscator.engine.passes.remapping.resource.RemapResourceNam
 import com.pocolifo.obfuscator.engine.passes.shufflemembers.ShuffleMembersPass;
 import com.pocolifo.obfuscator.engine.passes.sourcehints.RemoveSourceHintsPass;
 import com.pocolifo.obfuscator.engine.passes.string.StringManglerPass;
+import com.pocolifo.obfuscator.engine.passes.synthetic.SyntheticAccChanger;
 import com.pocolifo.obfuscator.engine.util.DynamicOption;
 import com.pocolifo.obfuscator.engine.util.Logging;
 import com.pocolifo.obfuscator.engine.util.NotConfigOption;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.File;
 import java.io.Serializable;
@@ -28,7 +30,7 @@ import java.util.Collection;
 import java.util.List;
 
 
-@Data
+@EqualsAndHashCode
 public class ObfuscatorOptions implements Serializable {
     @NotConfigOption protected long initTimestamp;
     @NotConfigOption public File inJar;
@@ -40,13 +42,15 @@ public class ObfuscatorOptions implements Serializable {
 
     public List<ClassPass<?>> passes = Arrays.asList(
             new GarbageMembersPass(),
+            new SyntheticAccChanger(),
             new RemapNamesPass(),
             new RemoveSourceHintsPass(),
-            new IfStatementPass(),
+            new FlowPass(),
             new StringManglerPass(),
             new NumberManglerPass(),
             new ShuffleMembersPass(),
             new AntiDecompilePass(),
+            new BytecodeScrambler(),
             new RemoveObfuscatorAnnotationsPass()
     );
 

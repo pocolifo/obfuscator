@@ -1,4 +1,4 @@
-package com.pocolifo.obfuscator.engine.passes.ifstatement;
+package com.pocolifo.obfuscator.engine.passes.flow;
 
 import com.pocolifo.obfuscator.engine.ObfuscatorEngine;
 import com.pocolifo.obfuscator.engine.passes.AbstractMethodPass;
@@ -7,23 +7,28 @@ import lombok.Getter;
 import me.tongfei.progressbar.ProgressBar;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
-import org.objectweb.asm.tree.analysis.*;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.ThreadLocalRandom;
 
-public class IfStatementPass extends AbstractMethodPass<PassOptions> implements Opcodes {
+public class FlowPass extends AbstractMethodPass<PassOptions> implements Opcodes {
     @Getter
     public PassOptions options = new PassOptions();
 
     @Override
     public String getPassName() {
-        return "Mangling if statements";
+        return "Mangling flow";
     }
 
     @Override
     public void doMethod(ObfuscatorEngine engine, Collection<ClassNode> inClasses, ClassNode classNode, MethodNode methodNode, ProgressBar bar, PassOptions options) {
+        methodNode.instructions.forEach(insn -> {
+            if (insn instanceof JumpInsnNode) {
+                doJumpNode((JumpInsnNode) insn);
+            }
+        });
+    }
+
+    private void doJumpNode(JumpInsnNode insn) {
 
     }
 }

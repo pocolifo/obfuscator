@@ -23,22 +23,7 @@ public class ObfuscationClassKeeper {
     public Queue<ClassNode> allClasses = new ConcurrentLinkedQueue<>();
     public Queue<ClassNode> dependencyClasses = new ConcurrentLinkedQueue<>();
 
-    private void loadJar(InputStream stream, Collection<ClassNode> list, int parseOptions) throws IOException {
-        try (ZipInputStream zis = new ZipInputStream(stream)) {
-            for (ZipEntry e; (e = zis.getNextEntry()) != null;) {
-                if (!e.getName().endsWith(".class")) continue;
-
-                ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(zis);
-                reader.accept(node, parseOptions);
-
-                list.add(node);
-                allClasses.add(node);
-            }
-        }
-    }
-
-    private void loadJmod(Path path, Collection<ClassNode> list, int parseOptions) throws IOException {
+    private void loadClassesFromArchive(Path path, Collection<ClassNode> classes, int parseOptions) throws IOException {
         try (FileSystem fs = FileSystems.newFileSystem(path, ClassLoader.getSystemClassLoader())) {
             Path root = fs.getRootDirectories().iterator().next();
 
@@ -49,7 +34,7 @@ public class ObfuscationClassKeeper {
                     ClassReader reader = new ClassReader(stream);
                     reader.accept(node, parseOptions);
 
-                    list.add(node);
+                    classes.add(node);
                     allClasses.add(node);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -58,16 +43,12 @@ public class ObfuscationClassKeeper {
         }
     }
 
-    public void loadInputJar(InputStream inJar) throws IOException {
-        loadJar(inJar, inputClasses, ClassReader.EXPAND_FRAMES);
+    public void loadInputJar(Path inJar) throws IOException {
+        loadClassesFromArchive(inJar, inputClasses, ClassReader.EXPAND_FRAMES);
     }
 
-    public void loadDependencyJar(InputStream dependency) throws IOException {
-        loadJar(dependency, dependencyClasses, ClassReader.SKIP_CODE);
-    }
-
-    public void loadDependencyJmod(Path path) throws IOException {
-        loadJmod(path, dependencyClasses, ClassReader.SKIP_CODE);
+    public void loadDependencyClasses(Path dependency) throws IOException {
+        loadClassesFromArchive(dependency, dependencyClasses, ClassReader.SKIP_CODE);
     }
 
     public static void prepareJarOnToClasspath(File jar) throws MalformedURLException {

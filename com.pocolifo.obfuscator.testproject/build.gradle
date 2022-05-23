@@ -56,7 +56,23 @@ if (pluginManager.hasPlugin('com.pocolifo.obfuscator.gradleplugin')) {
 
         pass("RemapNamesPass") {
             excludedMethods += 'iShouldBeExcluded'
-            obfuscatedStringSupplier = new TwoLetterObfuscatedStringSupplier.LetterA()
+            obfuscatedStringSupplier = new TwoLetterObfuscatedStringSupplier.LetterI()
+        }
+    }
+
+    obfuscate.doLast {
+        delete {
+            it.delete('src-classes/')
+        }
+
+        copy {
+            from {
+                zipTree(obfuscate.outputFile)
+            }
+
+            into {
+                'src-classes/'
+            }
         }
     }
 }

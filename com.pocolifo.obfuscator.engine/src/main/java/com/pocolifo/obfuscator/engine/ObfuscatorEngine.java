@@ -6,8 +6,8 @@ import com.pocolifo.obfuscator.engine.classes.ObfuscationClassKeeper;
 import com.pocolifo.obfuscator.engine.classes.ObfuscationClassWriter;
 import com.pocolifo.obfuscator.engine.passes.*;
 import com.pocolifo.obfuscator.engine.passes.remapping.mapping.JarMapping;
-import com.pocolifo.obfuscator.engine.util.Logging;
 import com.pocolifo.obfuscator.engine.util.FileUtil;
+import com.pocolifo.obfuscator.engine.util.Logging;
 import com.pocolifo.obfuscator.engine.util.ProgressUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +17,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.util.CheckClassAdapter;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -54,10 +55,10 @@ public class ObfuscatorEngine {
 
         // obfuscate
         Logging.info("Beginning obfuscation");
-        Iterable<ClassNode> nodes = doClassObfuscation();
+        Collection<ClassNode> nodes = doClassObfuscation();
 
         Logging.info("Finished obfuscation in %fs", (System.currentTimeMillis() - options.initTimestamp) / 1000f);
-        Logging.info("Done obfuscating, writing out JAR");
+        Logging.info("Writing out JAR");
         writeOutJar(nodes);
 
         Logging.info("Running final archive passes");
@@ -111,9 +112,10 @@ public class ObfuscatorEngine {
 
             bar.setExtraMessage("Writing out classes");
             for (ClassNode node : nodes) {
-                ClassWriter writer = new ObfuscationClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+                ClassWriter writer = new ObfuscationClassWriter(ClassWriter.COMPUTE_FRAMES);
 
                 try {
+                    Logging.info("Writing %s%s", Logging.ANSI_CYAN, node.name);
                     node.accept(writer);
                 } catch (TypeNotPresentException e) {
                     Logging.fatal("EXCEPTION THROWN: Please make sure you have included all library JARs. Exception: %s", e);
@@ -133,7 +135,7 @@ public class ObfuscatorEngine {
         }
     }
 
-    private Iterable<ClassNode> doClassObfuscation() {
+    private Collection<ClassNode> doClassObfuscation() {
         Logging.info("Loaded passes:");
 
         for (ClassPass<? extends PassOptions> classPass : options.passes) {
@@ -296,10 +298,10 @@ public class ObfuscatorEngine {
 
         // count
         int jarsToLoad = 1 + options.libraryJars.size();
-        Logging.info("About to load %d jars", jarsToLoad);
+        Logging.info("About to load %s%d%s jars", Logging.ANSI_CYAN, jarsToLoad, Logging.ANSI_RESET);
 
-        try (ProgressBar bar = ProgressUtil.bar("Loading input JARs", jarsToLoad); FileInputStream fis = new FileInputStream(options.inJar)) {
-            classKeeper.loadInputJar(fis);
+        try (ProgressBar bar = ProgressUtil.bar("Loading input JARs", jarsToLoad)) {
+            classKeeper.loadInputJar(options.inJar.toPath());
             ObfuscationClassKeeper.prepareJarOnToClasspath(options.inJar);
 
             bar.step();
@@ -309,15 +311,8 @@ public class ObfuscatorEngine {
             // libraries
             options.libraryJars.parallelStream().forEach(file -> {
                 try {
-                    if (file.getName().endsWith(".jmod")) {
-                        classKeeper.loadDependencyJmod(file.toPath());
-                    } else {
-                        ObfuscationClassKeeper.prepareJarOnToClasspath(file);
-
-                        try (FileInputStream depStream = new FileInputStream(file)) {
-                            classKeeper.loadDependencyJar(depStream);
-                        }
-                    }
+                    ObfuscationClassKeeper.prepareJarOnToClasspath(file);
+                    classKeeper.loadDependencyClasses(file.toPath());
 
                     bar.step();
                 } catch (IOException e) {

@@ -56,6 +56,7 @@ public class ObfuscateTask extends DefaultTask {
         try {
             new ObfuscatorEngine(obfuscatorOptions).obfuscate();
         } catch (Exception e) {
+            obfuscatorOptions.outJar.delete();
             e.printStackTrace();
         }
     }

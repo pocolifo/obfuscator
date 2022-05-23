@@ -16,6 +16,8 @@ dependencies {
     implementation project(':com.pocolifo.obfuscator.annotations')
 
     implementation 'org.ow2.asm:asm-commons:9.3'
+    implementation 'org.ow2.asm:asm-util:9.3'
+
     implementation 'me.tongfei:progressbar:0.9.3'
     implementation 'com.google.code.gson:gson:2.9.0'
 

@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import static com.pocolifo.obfuscator.engine.util.GsonUtil.getObjectAsElement;
 
 public class ConfigurationLoader {
-    private static ObfuscatorOptions loadConfiguration(Reader reader) {
+    protected ObfuscatorOptions loadConfiguration(Reader reader) {
         JsonObject object = new Gson().fromJson(reader, JsonObject.class);
 
         ObfuscatorOptions options = new ObfuscatorOptions();
@@ -95,17 +95,17 @@ public class ConfigurationLoader {
         return options;
     }
 
-    public static ObfuscatorOptions loadConfiguration(File file) throws IOException {
+    public ObfuscatorOptions loadConfiguration(File file) throws IOException {
         try (FileReader reader = new FileReader(file)) {
             return loadConfiguration(reader);
         }
     }
 
-    public static ObfuscatorOptions loadDefaultConfiguration() {
+    public ObfuscatorOptions loadDefaultConfiguration() {
         return new ObfuscatorOptions();
     }
 
-    public static String dumpDefault() throws IllegalAccessException {
+    public String dumpDefault() throws IllegalAccessException {
         JsonObject obj = new JsonObject();
         ObfuscatorOptions def = loadDefaultConfiguration();
 
@@ -127,7 +127,7 @@ public class ConfigurationLoader {
         return new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(obj);
     }
 
-    private static JsonObject getClassAsObject(Object instance) throws IllegalAccessException {
+    protected static JsonObject getClassAsObject(Object instance) throws IllegalAccessException {
         JsonObject object = new JsonObject();
 
         for (Field field : instance.getClass().getFields()) {
@@ -140,7 +140,7 @@ public class ConfigurationLoader {
         return object;
     }
 
-    private static void addFieldToObject(Object instance, Field field, JsonObject object) throws IllegalAccessException {
+    protected static void addFieldToObject(Object instance, Field field, JsonObject object) throws IllegalAccessException {
         Object val = field.get(instance);
 
         if (val instanceof Iterable) {

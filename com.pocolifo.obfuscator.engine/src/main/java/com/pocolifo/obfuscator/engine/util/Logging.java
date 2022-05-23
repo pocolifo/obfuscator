@@ -5,6 +5,7 @@ import java.util.Date;
 
 public class Logging {
     public static boolean enable = true;
+    public static boolean fatalThrowsException = true;
 
     // thanks to https://stackoverflow.com/a/5762502
     public static final String ANSI_RESET = "\u001B[0m";
@@ -36,7 +37,14 @@ public class Logging {
     }
 
     public static void fatal(String string, Object... objects) {
-        throw new RuntimeException(String.format(ANSI_RED + "%s [FATAL] %s%s%n", getLogPrefix(), String.format(string, objects), ANSI_RESET));
+        String fmt = String.format(ANSI_RED + "%s [FATAL] %s%s%n", getLogPrefix(), String.format(string, objects), ANSI_RESET);
+
+        if (fatalThrowsException) {
+            throw new RuntimeException(fmt);
+        } else {
+            System.err.println(fmt);
+            System.exit(-1);
+        }
     }
 
     public static void welcome() {

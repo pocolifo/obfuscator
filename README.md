@@ -22,6 +22,10 @@ A demo project that is used to test the obfuscation engine to see if it works.
 ### `com.pocolifo.obfuscator.gradleplugin` / Gradle Plugin Interface
 A Gradle plugin to interface with the obfuscation engine.
 
+### `com.pocolifo.obfuscator.webservice` / Web Service
+
+A website (programmed in Go) to interface with the obfuscator engine.
+
 ## Requirements
 ### To run
 - A Java 8 compatible JVM & JRE

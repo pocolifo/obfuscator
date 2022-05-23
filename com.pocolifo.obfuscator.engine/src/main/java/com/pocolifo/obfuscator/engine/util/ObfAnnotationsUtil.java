@@ -1,20 +1,26 @@
 package com.pocolifo.obfuscator.engine.util;
 
+import com.pocolifo.obfuscator.annotations.Pass;
+import com.pocolifo.obfuscator.annotations.Passes;
 import com.pocolifo.obfuscator.engine.passes.PassOptions;
 import lombok.Data;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
+/*
+ * lord forgive me
+ */
 public class ObfAnnotationsUtil {
+    private static final String PASSES_TYPE_DESCRIPTOR = Type.getDescriptor(Passes.class);
+    private static final String PASS_TYPE_DESCRIPTOR = Type.getDescriptor(Pass.class);
+
     public static PassOptions getOptions(ClassNode node, Class<?> passClass, PassOptions optionsInstance) {
         return getOptions(ListUtil.join(node.visibleAnnotations, node.invisibleAnnotations), passClass, optionsInstance);
     }
@@ -29,21 +35,22 @@ public class ObfAnnotationsUtil {
 
     @SuppressWarnings("unchecked")
     private static PassOptions getOptions(List<AnnotationNode> annotations, Class<?> passClass, PassOptions optionsInstance) {
-        if (annotations != null) {
-            for (AnnotationNode a : annotations) {
-                if (a.desc.equals("Lcom/pocolifo/obfuscator/annotations/Passes;")) {
-                    List<AnnotationNode> nodes = (List<AnnotationNode>) a.values.get(1);
+        if (annotations == null) return optionsInstance;
 
-                    for (AnnotationNode annotationNode : nodes) {
-                        AnnotationPassOptions aops = getOptions(passClass.getSimpleName(), annotationNode, optionsInstance);
+        for (AnnotationNode annotation : annotations) {
+            if (annotation.desc.equals(PASS_TYPE_DESCRIPTOR)) {
+                Map<Object, Object> keyValMap = ListUtil.toMap(annotation.values);
 
-                        if (aops != null) return aops.options;
-                    }
-                } else if (a.desc.equals("Lcom/pocolifo/obfuscator/annotations/Pass;")) {
-                    AnnotationPassOptions aops = getOptions(passClass.getSimpleName(), a, optionsInstance);
+                // make sure that the pass is the right one
+                if (!keyValMap.get("value").equals(passClass.getSimpleName())) return optionsInstance;
 
-                    if (aops != null) return aops.options;
-                }
+                // get pass options
+                return getAnnotationPassOptions(annotation, optionsInstance);
+            } else if (annotation.desc.equals(PASSES_TYPE_DESCRIPTOR)) {
+                Map<Object, Object> keyValMap = ListUtil.toMap(annotation.values);
+                List<AnnotationNode> passOptions = (List<AnnotationNode>) keyValMap.get("value");
+
+                return getOptions(passOptions, passClass, optionsInstance);
             }
         }
 
@@ -51,62 +58,47 @@ public class ObfAnnotationsUtil {
     }
 
     @SuppressWarnings("unchecked")
-    private static AnnotationPassOptions getOptions(String expectedPassName, AnnotationNode passAnnotation, PassOptions optionsInstance) {
-        AnnotationPassOptions aops = new AnnotationPassOptions();
-        aops.setOptions(optionsInstance);
+    private static PassOptions getAnnotationPassOptions(AnnotationNode annotation, PassOptions optionsInstance) {
+        Map<Object, Object> keyValMap = ListUtil.toMap(annotation.values);
+        List<AnnotationNode> optionPassAnnotations = (List<AnnotationNode>) keyValMap.get("options");
 
-        Map<String, Object> map = toMap(passAnnotation.values);
-        aops.setPassName((String) map.get("value"));
+        optionPassAnnotations.forEach(annotationNode -> {
+            Map<Object, Object> optionsMap = ListUtil.toMap(annotationNode.values);
+            System.out.println(optionsMap);
 
-        if (!aops.passName.equals(expectedPassName)) return null;
+            String key = (String) optionsMap.get("key");
+            List<String> val = (List<String>) optionsMap.get("value");
 
-        for (AnnotationNode option : (List<AnnotationNode>) map.get("options")) {
-            Map<String, Object> optionMap = toMap(option.values);
+            setPassOption(optionsInstance, key, val);
+        });
 
-            String optionName = (String) optionMap.get("key");
-            List<String> optionValue = (List<String>) optionMap.get("value");
+        return optionsInstance;
+    }
 
-            Class<? extends PassOptions> optsClass = optionsInstance.getClass();
+    private static void setPassOption(PassOptions optionsInstance, String key, List<String> value) {
+        try {
+            Field field = optionsInstance.getClass().getField(key);
+            field.setAccessible(true);
 
-            try {
-                Field field = optsClass.getField(optionName);
-
-                if (optionValue.size() == 1) {
-                    String val = optionValue.get(0);
-
-                    switch (field.getType().getSimpleName().toLowerCase()) {
-                        case "boolean":
-                            field.set(optionsInstance, Boolean.valueOf(val));
-                            break;
-
-                        case "int":
-                            field.set(optionsInstance, Integer.parseInt(val));
-                            break;
-                    }
-                } else {
-                    field.set(optionsInstance, optionValue);
-                }
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException(e);
+            if (value.size() == 1) {
+                setPrimitiveValue(field, optionsInstance, value.get(0));
+            } else {
+                field.set(optionsInstance, value);
             }
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
         }
-
-        return aops;
     }
 
-    private static Map<String, Object> toMap(List<Object> list) {
-        HashMap<String, Object> map = new HashMap<>();
+    private static void setPrimitiveValue(Field field, Object instance, Object val) throws IllegalAccessException {
+        switch (field.getType().getSimpleName().toLowerCase()) {
+            case "boolean":
+                field.set(instance, Boolean.valueOf((String) val));
+                break;
 
-        for (int i = 0; list.size() > i; i += 2) {
-            map.put((String) list.get(i), list.get(i + 1));
+            case "int":
+                field.set(instance, Integer.parseInt((String) val));
+                break;
         }
-
-        return map;
-    }
-
-    @Data
-    private static class AnnotationPassOptions {
-        public String passName;
-        public PassOptions options;
     }
 }

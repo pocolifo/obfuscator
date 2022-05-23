@@ -5,6 +5,9 @@ import com.pocolifo.obfuscator.annotations.PassOption;
 
 import java.util.Arrays;
 
+@Pass(value = "RemapNamesPass", options = {
+        @PassOption(key = "remapClassNames", value = "false")
+})
 @Pass(value = "StringManglerPass", options = {
         @PassOption(key = "enabled", value = "false")
 })

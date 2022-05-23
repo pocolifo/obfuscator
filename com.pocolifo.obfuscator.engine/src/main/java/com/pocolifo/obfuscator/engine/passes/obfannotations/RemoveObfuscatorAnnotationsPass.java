@@ -6,6 +6,7 @@ import com.pocolifo.obfuscator.annotations.Passes;
 import com.pocolifo.obfuscator.engine.ObfuscatorEngine;
 import com.pocolifo.obfuscator.engine.passes.ClassPass;
 import com.pocolifo.obfuscator.engine.passes.PassOptions;
+import com.pocolifo.obfuscator.engine.util.Logging;
 import com.pocolifo.obfuscator.engine.util.ProgressUtil;
 import lombok.Getter;
 import me.tongfei.progressbar.ProgressBar;
