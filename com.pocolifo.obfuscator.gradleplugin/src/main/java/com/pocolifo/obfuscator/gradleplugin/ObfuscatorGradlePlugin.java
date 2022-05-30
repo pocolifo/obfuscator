@@ -8,10 +8,8 @@ import org.gradle.api.Project;
 
 public class ObfuscatorGradlePlugin implements Plugin<Project> {
     public static final String GROUP = "obfuscator";
-
     @Getter
     private static ObfuscatorGradlePlugin plugin;
-
     public ObfuscatorExtension config;
 
     @Override

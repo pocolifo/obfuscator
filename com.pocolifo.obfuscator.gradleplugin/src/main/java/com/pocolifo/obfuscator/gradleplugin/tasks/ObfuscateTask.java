@@ -36,7 +36,6 @@ public class ObfuscateTask extends DefaultTask {
         setDescription("Generates an obfuscated JAR");
 
         libraries = new ArrayList<>();
-        libraries.add(getProject().getConfigurations().getByName("runtimeClasspath"));
 
         outputFile = getProject().provider(() -> new File(((Jar) getProject().getTasks().getByName("jar")).getArchiveFile().get().getAsFile().getPath() + "-obfuscated.jar"));
         inputFile = getProject().provider(() -> ((Jar) getProject().getTasks().getByName("jar")).getArchiveFile().get().getAsFile());
@@ -49,6 +48,8 @@ public class ObfuscateTask extends DefaultTask {
 
         obfuscatorOptions.inJar = inputFile.get();
         obfuscatorOptions.outJar = outputFile.get();
+
+        libraries.add(getProject().getConfigurations().getByName("runtimeClasspath"));
         libraries.forEach(files -> obfuscatorOptions.libraryJars.addAll(files.getFiles()));
 
         obfuscatorOptions.prepare();
