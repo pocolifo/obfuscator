@@ -1,6 +1,7 @@
 package com.pocolifo.obfuscator.engine.util;
 
 import com.pocolifo.obfuscator.annotations.Pass;
+import com.pocolifo.obfuscator.annotations.PassOption;
 import com.pocolifo.obfuscator.annotations.Passes;
 import com.pocolifo.obfuscator.engine.passes.PassOptions;
 import lombok.Data;
@@ -33,9 +34,25 @@ public class ObfAnnotationsUtil {
         return getOptions(ListUtil.join(node.visibleAnnotations, node.invisibleAnnotations), passClass, getOptions(clsNode, passClass, optionsInstance));
     }
 
+    private static PassOptions copyPassOptions(PassOptions defaultOptions) {
+        try {
+            Class<? extends PassOptions> optsCls = defaultOptions.getClass();
+            PassOptions passOptions = optsCls.newInstance();
+
+            for (Field field : optsCls.getFields()) {
+                field.set(passOptions, field.get(defaultOptions));
+            }
+
+            return passOptions;
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static PassOptions getOptions(List<AnnotationNode> annotations, Class<?> passClass, PassOptions optionsInstance) {
         if (annotations == null) return optionsInstance;
+        PassOptions options = copyPassOptions(optionsInstance);
 
         for (AnnotationNode annotation : annotations) {
             if (annotation.desc.equals(PASS_TYPE_DESCRIPTOR)) {
@@ -45,12 +62,12 @@ public class ObfAnnotationsUtil {
                 if (!keyValMap.get("value").equals(passClass.getSimpleName())) return optionsInstance;
 
                 // get pass options
-                return getAnnotationPassOptions(annotation, optionsInstance);
+                return getAnnotationPassOptions(annotation, options);
             } else if (annotation.desc.equals(PASSES_TYPE_DESCRIPTOR)) {
                 Map<Object, Object> keyValMap = ListUtil.toMap(annotation.values);
                 List<AnnotationNode> passOptions = (List<AnnotationNode>) keyValMap.get("value");
 
-                return getOptions(passOptions, passClass, optionsInstance);
+                return getOptions(passOptions, passClass, options);
             }
         }
 
@@ -64,7 +81,6 @@ public class ObfAnnotationsUtil {
 
         optionPassAnnotations.forEach(annotationNode -> {
             Map<Object, Object> optionsMap = ListUtil.toMap(annotationNode.values);
-            System.out.println(optionsMap);
 
             String key = (String) optionsMap.get("key");
             List<String> val = (List<String>) optionsMap.get("value");

@@ -4,12 +4,13 @@ import com.pocolifo.obfuscator.engine.ObfuscatorEngine;
 import com.pocolifo.obfuscator.engine.util.ObfAnnotationsUtil;
 import com.pocolifo.obfuscator.engine.util.ProgressUtil;
 import me.tongfei.progressbar.ProgressBar;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 import java.util.Collection;
 import java.util.ListIterator;
 
-public abstract class AbstractMethodPass<T extends PassOptions> implements ClassPass<T> {
+public abstract class AbstractMethodPass<T extends PassOptions> implements ClassPass<T>, Opcodes {
     @SuppressWarnings("unchecked")
     @Override
     public Collection<ClassNode> run(ObfuscatorEngine engine, Collection<ClassNode> inClasses) {
@@ -46,7 +47,7 @@ public abstract class AbstractMethodPass<T extends PassOptions> implements Class
         int[] indexes = new int[count];
 
         for (int i = 0; count > i; i++) {
-            indexes[i] = highestIndex + i + 1;
+            indexes[i] = highestIndex + i + 3;
         }
 
         return indexes;

@@ -140,7 +140,10 @@ public class MappingLoader implements Serializable {
         }
     }
 
-    private void obfuscateClass(ClassHierarchyNode classHierarchyNode, RemapNamesPass.Options options, JarMapping mapping, ClassMapping classMapping, List<ClassMapping> fixNestedClasses) {
+    private void obfuscateClass(ClassHierarchyNode classHierarchyNode, RemapNamesPass.Options defaultOptions, JarMapping mapping, ClassMapping classMapping, List<ClassMapping> fixNestedClasses) {
+        RemapNamesPass.Options options = (RemapNamesPass.Options)
+                ObfAnnotationsUtil.getOptions(classMapping.node, RemapNamesPass.class, defaultOptions);
+
         boolean canBeObfuscated = options.remapClassNames && !options.excludedClasses.contains(classMapping.from);
 
         if (canBeObfuscated) {
@@ -167,21 +170,27 @@ public class MappingLoader implements Serializable {
         // obfuscate fields inside the class
         for (FieldMapping fieldMapping : classMapping.fields.values()) {
             // precondition to make sure that the field hasn't been obfuscated already
+            RemapNamesPass.Options fieldOptions = (RemapNamesPass.Options)
+                    ObfAnnotationsUtil.getOptions(fieldMapping.node, classMapping.node, RemapNamesPass.class, defaultOptions);
+
             if (fieldMapping.to == null)
                 obfuscateField(fieldMapping,
                         classHierarchyNode,
                         mapping,
-                        (RemapNamesPass.Options) ObfAnnotationsUtil.getOptions(fieldMapping.node, classMapping.node, RemapNamesPass.class, options));
+                        fieldOptions);
         }
 
         // obfuscate methods inside the class
         for (MethodMapping methodMapping : classMapping.methods.values()) {
             // precondition to make sure that the method hasn't been obfuscated already
+            RemapNamesPass.Options methodOptions = (RemapNamesPass.Options)
+                    ObfAnnotationsUtil.getOptions(methodMapping.node, classMapping.node, RemapNamesPass.class, defaultOptions);
+
             if (methodMapping.to == null)
                 obfuscateMethod(methodMapping,
                         classHierarchyNode,
                         mapping,
-                        (RemapNamesPass.Options) ObfAnnotationsUtil.getOptions(methodMapping.node, classMapping.node, RemapNamesPass.class, options));
+                        methodOptions);
         }
     }
 
@@ -201,12 +210,9 @@ public class MappingLoader implements Serializable {
         final List<ClassMapping> fixNestedClasses = new ArrayList<>();
 
         getAppropriateStreamForSize(mapping.classes.values()).forEach(classMapping -> {
-            RemapNamesPass.Options options = (RemapNamesPass.Options) ObfAnnotationsUtil.getOptions(classMapping.node, RemapNamesPass.class, defaultOptions);
-            System.out.println(classMapping.from + " : " + options.remapClassNames);
-
             ClassHierarchyNode classHierarchyNode = hierarchy.find(classMapping.from);
 
-            obfuscateClass(classHierarchyNode, options, mapping, classMapping, fixNestedClasses);
+            obfuscateClass(classHierarchyNode, defaultOptions, mapping, classMapping, fixNestedClasses);
         });
 
         // update nested class names

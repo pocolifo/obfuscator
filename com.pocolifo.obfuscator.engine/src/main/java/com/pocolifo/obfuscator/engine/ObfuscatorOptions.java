@@ -41,8 +41,8 @@ public class ObfuscatorOptions implements Serializable {
     public boolean dumpHierarchy = false;
 
     public List<ClassPass<?>> passes = Arrays.asList(
-            new GarbageMembersPass(),
             new SyntheticAccChanger(),
+            new GarbageMembersPass(),
             new RemapNamesPass(),
             new RemoveSourceHintsPass(),
             new FlowPass(),
@@ -50,6 +50,7 @@ public class ObfuscatorOptions implements Serializable {
             new NumberManglerPass(),
             new ShuffleMembersPass(),
             new AntiDecompilePass(),
+            // computeframes pass
             new BytecodeScrambler(),
             new RemoveObfuscatorAnnotationsPass()
     );

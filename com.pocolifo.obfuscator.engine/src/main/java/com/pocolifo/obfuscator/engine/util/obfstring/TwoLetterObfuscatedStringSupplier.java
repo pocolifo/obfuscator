@@ -35,4 +35,10 @@ public class TwoLetterObfuscatedStringSupplier implements ObfuscatedStringSuppli
             super('\u0406', 'I');
         }
     }
+
+    public static class LetterIL extends TwoLetterObfuscatedStringSupplier {
+        public LetterIL() {
+            super('I', 'l');
+        }
+    }
 }

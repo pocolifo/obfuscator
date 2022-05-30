@@ -11,6 +11,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
+import java.lang.annotation.Annotation;
 import java.util.Collection;
 
 public class SyntheticAccChanger implements ClassPass<SyntheticAccChanger.Options> {
@@ -20,6 +21,10 @@ public class SyntheticAccChanger implements ClassPass<SyntheticAccChanger.Option
     public Collection<ClassNode> run(ObfuscatorEngine engine, Collection<ClassNode> inClasses) {
         try (ProgressBar bar = ProgressUtil.bar("Making classes & members synthetic", inClasses.size())) {
             for (ClassNode cls : inClasses) {
+                if (cls.interfaces.contains(Annotation.class.getCanonicalName().replaceAll("\\.", "/"))) {
+                    continue;
+                }
+
                 if (options.addForClasses) {
                     cls.access |= Opcodes.ACC_SYNTHETIC;
                 }

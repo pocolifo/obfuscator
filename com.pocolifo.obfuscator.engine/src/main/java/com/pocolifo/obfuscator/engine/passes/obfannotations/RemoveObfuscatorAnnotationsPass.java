@@ -38,9 +38,9 @@ public class RemoveObfuscatorAnnotationsPass implements ClassPass<PassOptions> {
                     doAnnotationList(method.visibleAnnotations);
                     doAnnotationList(method.invisibleAnnotations);
                 }
-            }
 
-            bar.step();
+                bar.step();
+            }
         }
 
         return inClasses;
