@@ -44,3 +44,33 @@ task fatJar(type: org.gradle.jvm.tasks.Jar) {
     duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
     with jar
 }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            pom {
+                name = 'Obfuscator CLI'
+                description = 'The Pocolifo Obfuscator CLI'
+                artifactId = 'cli'
+            }
+
+            from components['java']
+        }
+    }
+
+    repositories {
+        maven {
+            name 'gitlab'
+            url 'https://gitlab.pocolifo.com/api/v4/projects/21/packages/maven'
+
+            credentials(HttpHeaderCredentials) {
+                name = 'Job-Token'
+                value = System.getenv("CI_JOB_TOKEN")
+            }
+
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
+        }
+    }
+}

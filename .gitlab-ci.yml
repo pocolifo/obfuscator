@@ -1,0 +1,48 @@
+image: gradle:7-jdk8
+
+stages:
+  - publish
+
+publish-annotations:
+  stage: publish
+  script:
+    - gradle com.pocolifo.obfuscator.annotations:build
+    - gradle com.pocolifo.obfuscator.annotations:publishMavenPublicationToGitlabRepository
+  only:
+    - tags
+  rules:
+    - changes:
+        - com.pocolifo.obfuscator.annotations/**/*
+      when: always
+
+publish-engine:
+  stage: publish
+  script:
+    - gradle com.pocolifo.obfuscator.engine:build
+    - gradle com.pocolifo.obfuscator.engine:publishMavenPublicationToGitlabRepository
+  rules:
+    - changes:
+        - com.pocolifo.obfuscator.engine/**/*
+      when: always
+
+publish-cli:
+  stage: publish
+  script:
+    - gradle com.pocolifo.obfuscator.cli:build
+    - gradle com.pocolifo.obfuscator.cli:publishMavenPublicationToGitlabRepository
+  rules:
+    - changes:
+        - com.pocolifo.obfuscator.cli/**/*
+      when: always
+
+publish-gradle-plugin:
+  stage: publish
+  script:
+   - gradle com.pocolifo.obfuscator.gradleplugin:build
+   - gradle com.pocolifo.obfuscator.gradleplugin:publishObfuscatorPluginPluginMarkerMavenPublicationToGitlabRepository
+   - gradle com.pocolifo.obfuscator.gradleplugin:publishPluginMavenPublicationToGitlabRepository
+   - gradle com.pocolifo.obfuscator.gradleplugin:publishMavenPublicationToGitlabRepository
+  rules:
+    - changes:
+        - com.pocolifo.obfuscator.gradleplugin/**/*
+      when: always

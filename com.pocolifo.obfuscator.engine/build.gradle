@@ -29,8 +29,6 @@ dependencies {
 }
 
 test {
-    dependsOn(':com.pocolifo.obfuscator.testproject:build')
-
     useJUnitPlatform()
 }
 
@@ -47,10 +45,28 @@ publishing {
     publications {
         maven(MavenPublication) {
             pom {
+                name = 'Pocolifo Obfuscator'
+                description = 'The Pocolifo Obfuscator Engine and API'
                 artifactId = 'engine'
             }
 
             from components['java']
+        }
+    }
+
+    repositories {
+        maven {
+            name 'gitlab'
+            url 'https://gitlab.pocolifo.com/api/v4/projects/21/packages/maven'
+
+            credentials(HttpHeaderCredentials) {
+                name = 'Job-Token'
+                value = System.getenv("CI_JOB_TOKEN")
+            }
+
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
         }
     }
 }
