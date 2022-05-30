@@ -1,10 +1,17 @@
-apply plugin: 'java'
+plugins {
+    id 'java'
+    id 'com.pocolifo.obfuscator.gradleplugin' version '1.0-SNAPSHOT'
+}
 
 group 'com.pocolifo.obfuscator'
 version '1.0-SNAPSHOT'
 
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
 repositories {
     mavenCentral()
+    mavenLocal()
 
     maven {
         url 'https://maven.services.pocolifo.com/releases'
@@ -16,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly project(':com.pocolifo.obfuscator.annotations')
+    compileOnly 'com.pocolifo.obfuscator:annotations:1.0-SNAPSHOT'
     implementation 'com.pocolifo:commons:1.2.0'
     implementation 'org.spongepowered:mixin:0.7.11-SNAPSHOT'
 }
@@ -30,20 +37,19 @@ jar {
     }
 }
 
-if (pluginManager.hasPlugin('com.pocolifo.obfuscator.gradleplugin')) {
-    obfuscator {
-        pass("GarbageMembersPass") {
-            addFields = true
-            addMethods = true
-        }
+obfuscator {
+    pass("GarbageMembersPass") {
+        addFields = true
+        addMethods = true
+    }
 
-        pass("AntiDecompileArchivePass") {
-            fakeZipDirectory = false
-        }
+    pass("AntiDecompileArchivePass") {
+        fakeZipDirectory = false
+    }
 
-        pass("RemapNamesPass") {
-            excludedMethods += 'iShouldBeExcluded'
-        }
+    pass("RemapNamesPass") {
+        excludedMethods += 'iShouldBeExcluded'
+
     }
 }
 
